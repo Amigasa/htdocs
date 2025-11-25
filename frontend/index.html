@@ -669,6 +669,98 @@
             font-size: 12px;
             color: var(--gray-500);
         }
+        /* Стили для модального окна смены статуса */
+        .status-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-option {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .status-option:hover {
+            border-color: var(--primary);
+            background: #F0F9FF;
+        }
+
+        .status-option.selected {
+            border-color: var(--primary);
+            background: #EFF6FF;
+        }
+
+        .status-option.current {
+            background: #FEF3C7;
+            border-color: #F59E0B;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .status-label {
+            font-weight: 600;
+            margin-right: 8px;
+            min-width: 100px;
+        }
+
+        .status-desc {
+            color: var(--gray-500);
+            font-size: 12px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            padding: 0 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--gray-200);
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -678,6 +770,22 @@
         class ApiService {
             constructor() {
                 this.baseUrl = 'http://localhost/quicklead-backend/api';
+            }
+            async updateLeadStatus(leadId, status) {
+                console.log('🔄 Обновление статуса заявки:', { leadId, status });
+                
+                try {
+                    const response = await this.request('leads.php', {
+                        method: 'PUT',
+                        body: { id: leadId, status: status }
+                    });
+                    
+                    console.log('✅ Статус обновлен:', response);
+                    return response;
+                } catch (error) {
+                    console.error('❌ Ошибка обновления статуса:', error);
+                    throw error;
+                }
             }
 
             async request(endpoint, options = {}) {
@@ -713,6 +821,7 @@
                     console.error('❌ API Ошибка:', error);
                     throw error;
                 }
+                
             }
 
             async login(username, password) {
@@ -739,6 +848,22 @@
 
             async getUsers() {
                 return this.request('users.php');
+            }
+            async createLead(leadData) {
+                console.log('📤 Отправка заявки:', leadData);
+                
+                try {
+                    const response = await this.request('leads.php', {
+                        method: 'POST',
+                        body: leadData
+                    });
+                    
+                    console.log('✅ Ответ от сервера:', response);
+                    return response;
+                } catch (error) {
+                    console.error('❌ Ошибка при создании заявки:', error);
+                    throw error;
+                }
             }
         }
 
@@ -1369,13 +1494,16 @@
                                             <td>${lead.phone || '-'}</td>
                                             <td>${lead.project_name || '-'}</td>
                                             <td>
-                                                <span class="badge badge-${this.getStatusColor(lead.status)}">
-                                                    ${this.getStatusText(lead.status)}
-                                                </span>
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span class="badge badge-${this.getStatusColor(lead.status)}">
+                                                        ${this.getStatusText(lead.status)}
+                                                    </span>
+                                                    ${isOperator ? '<span style="font-size: 12px; color: #6B7280;"></span>' : ''}
+                                                </div>
                                             </td>
                                             <td>${new Date(lead.created_at).toLocaleDateString()}</td>
                                             <td>
-                                                <button class="btn-icon" onclick="app.editLeadStatus(${lead.id}, '${lead.status}')">
+                                                <button class="btn-icon" onclick="app.editLeadStatus(${lead.id}, '${lead.status}')" title="Изменить статус">
                                                     ${isOperator ? '✏️' : '👁️'}
                                                 </button>
                                             </td>
@@ -1435,38 +1563,135 @@
                         return this.renderClientRequestForm();
                 }
             }
-            editLeadStatus(leadId, currentStatus) {
+            async editLeadStatus(leadId, currentStatus) {
                 const isOperator = this.currentUser.role === 'operator';
                 
-                if (isOperator) {
-                    // Оператор может менять статус заявки
-                    const statuses = [
-                        { value: 'new', label: '🆕 Новая' },
-                        { value: 'in_progress', label: '⚡ В работе' },
-                        { value: 'callback', label: '📞 Перезвонить' },
-                        { value: 'success', label: '✅ Успешно' },
-                        { value: 'failed', label: '❌ Неудача' }
-                    ];
-                    
-                    let statusOptions = '';
-                    statuses.forEach(status => {
-                        const selected = status.value === currentStatus ? 'selected' : '';
-                        statusOptions += `<option value="${status.value}" ${selected}>${status.label}</option>`;
-                    });
-                    
-                    const newStatus = prompt(
-                        `Изменить статус заявки #${leadId}\n\nВыберите новый статус:`,
-                        currentStatus
-                    );
-                    
-                    if (newStatus && newStatus !== currentStatus) {
-                        alert(`✅ Статус заявки #${leadId} изменен с "${this.getStatusText(currentStatus)}" на "${this.getStatusText(newStatus)}"`);
-                        // Здесь будет вызов API для обновления статуса
-                    }
-                } else {
-                    // Админ просто просматривает
+                if (!isOperator) {
                     alert(`Просмотр заявки #${leadId}\nТекущий статус: ${this.getStatusText(currentStatus)}`);
+                    return;
                 }
+                
+                // Создаем модальное окно для выбора статуса
+                const modalHtml = `
+                    <div class="modal-overlay" onclick="app.closeStatusModal()">
+                        <div class="modal" onclick="event.stopPropagation()" style="max-width: 400px;">
+                            <div class="modal-header">
+                                <h3>✏️ Изменить статус заявки #${leadId}</h3>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Текущий статус:</strong> <span class="badge badge-${this.getStatusColor(currentStatus)}">${this.getStatusText(currentStatus)}</span></p>
+                                
+                                <div class="status-options" style="margin: 20px 0;">
+                                    <div class="status-option ${currentStatus === 'new' ? 'current' : ''}" onclick="app.selectStatus('new')">
+                                        <span class="status-dot" style="background: #3B82F6"></span>
+                                        <span class="status-label">🆕 Новая</span>
+                                        <span class="status-desc">Заявка только что создана</span>
+                                    </div>
+                                    
+                                    <div class="status-option ${currentStatus === 'in_progress' ? 'current' : ''}" onclick="app.selectStatus('in_progress')">
+                                        <span class="status-dot" style="background: #F59E0B"></span>
+                                        <span class="status-label">⚡ В работе</span>
+                                        <span class="status-desc">Заявка в процессе обработки</span>
+                                    </div>
+                                    
+                                    <div class="status-option ${currentStatus === 'success' ? 'current' : ''}" onclick="app.selectStatus('success')">
+                                        <span class="status-dot" style="background: #10B981"></span>
+                                        <span class="status-label">✅ Успешно</span>
+                                        <span class="status-desc">Заявка успешно завершена</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" onclick="app.closeStatusModal()">Отмена</button>
+                                <button class="btn btn-primary" id="confirmStatusBtn" disabled onclick="app.confirmStatusChange(${leadId})">
+                                    Сохранить изменения
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Сохраняем данные для использования в других методах
+                this.statusModalData = {
+                    leadId: leadId,
+                    currentStatus: currentStatus,
+                    selectedStatus: null
+                };
+                
+                // Показываем модальное окно
+                this.showModal(modalHtml);
+            }
+
+            selectStatus(status) {
+                const options = document.querySelectorAll('.status-option');
+                options.forEach(opt => opt.classList.remove('selected'));
+                
+                event.currentTarget.classList.add('selected');
+                
+                // Включаем кнопку сохранения
+                const confirmBtn = document.getElementById('confirmStatusBtn');
+                confirmBtn.disabled = false;
+                
+                // Сохраняем выбранный статус
+                this.statusModalData.selectedStatus = status;
+            }
+
+            async confirmStatusChange(leadId) {
+                const { selectedStatus, currentStatus } = this.statusModalData;
+                
+                if (!selectedStatus) {
+                    alert('Выберите новый статус');
+                    return;
+                }
+                
+                if (selectedStatus === currentStatus) {
+                    alert('Статус не изменился');
+                    this.closeStatusModal();
+                    return;
+                }
+                
+                // Показываем индикатор загрузки
+                const confirmBtn = document.getElementById('confirmStatusBtn');
+                const originalText = confirmBtn.innerHTML;
+                confirmBtn.innerHTML = '⏳ Сохранение...';
+                confirmBtn.disabled = true;
+                
+                try {
+                    const result = await this.apiService.updateLeadStatus(leadId, selectedStatus);
+                    
+                    if (result.success) {
+                        // Закрываем модальное окно
+                        this.closeStatusModal();
+                        
+                        // Показываем уведомление
+                        alert(`✅ Статус заявки #${leadId} изменен с "${this.getStatusText(currentStatus)}" на "${this.getStatusText(selectedStatus)}"`);
+                        
+                        // Обновляем данные на странице
+                        this.loadAdminContent();
+                        
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    alert('❌ Ошибка при изменении статуса: ' + error.message);
+                    // Восстанавливаем кнопку
+                    confirmBtn.innerHTML = originalText;
+                    confirmBtn.disabled = false;
+                }
+            }
+
+            closeStatusModal() {
+                const modal = document.querySelector('.modal-overlay');
+                if (modal) {
+                    modal.remove();
+                }
+                this.statusModalData = null;
+            }
+
+            showModal(html) {
+                const modalContainer = document.createElement('div');
+                modalContainer.innerHTML = html;
+                document.body.appendChild(modalContainer);
             }
 
             renderClientRequestForm() {
@@ -1721,32 +1946,76 @@
             }
 
             async submitClientRequest(event) {
-                event.preventDefault();
-                
-                const formData = {
-                    name: document.getElementById('clientName').value,
-                    phone: document.getElementById('clientPhone').value,
-                    email: document.getElementById('clientEmail').value,
-                    message: document.getElementById('clientMessage').value,
-                    project_id: document.getElementById('clientProject').value
-                };
-                
-                if (!formData.name || !formData.phone || !formData.message) {
-                    alert('Заполните обязательные поля: имя, телефон и описание');
-                    return;
+    event.preventDefault();
+    
+    // Получаем данные из формы
+    const formData = {
+        project_id: parseInt(document.getElementById('clientProject').value),
+        name: document.getElementById('clientName').value.trim(),
+        phone: document.getElementById('clientPhone').value.trim(),
+        email: document.getElementById('clientEmail').value.trim(),
+        message: document.getElementById('clientMessage').value.trim()
+    };
+    
+    console.log('📝 Данные для отправки:', formData);
+    
+    // Валидация
+    if (!formData.name) {
+        alert('Введите ваше имя');
+        return;
+    }
+    
+    if (!formData.phone) {
+        alert('Введите ваш телефон');
+        return;
+    }
+    
+    if (!formData.message) {
+        alert('Опишите вашу проблему или вопрос');
+        return;
+    }
+    
+    // Показываем индикатор загрузки
+    const submitBtn = document.querySelector('#clientRequestForm button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ Отправка...';
+    submitBtn.disabled = true;
+    
+    try {
+        console.log('🔄 Отправка заявки в API...');
+        const result = await this.apiService.createLead(formData);
+        console.log('✅ Ответ от API:', result);
+        
+        if (result.success) {
+            alert(`✅ Заявка #${result.lead_id} успешно создана!\n\nС вами свяжутся в ближайшее время.`);
+            
+            // Очищаем форму
+            document.getElementById('clientRequestForm').reset();
+            
+            // Переходим к отслеживанию
+            this.navigate('client-status');
+            
+            // Автоматически заполняем номер заявки в поиске
+            setTimeout(() => {
+                const searchInput = document.getElementById('leadSearchInput');
+                if (searchInput) {
+                    searchInput.value = result.lead_id;
+                    this.searchLead();
                 }
-                
-                try {
-                    const newId = Math.floor(Math.random() * 1000) + 1000;
-                    alert(`✅ Заявка #${newId} успешно создана!\n\nС вами свяжутся в ближайшее время.`);
-                    
-                    document.getElementById('clientRequestForm').reset();
-                    this.navigate('client-status');
-                    
-                } catch (error) {
-                    alert('Ошибка создания заявки: ' + error.message);
-                }
-            }
+            }, 1000);
+            
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка создания заявки:', error);
+        alert('❌ Ошибка создания заявки: ' + error.message);
+    } finally {
+        // Восстанавливаем кнопку
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
 
             attachAdminEventListeners() {
                 const navItems = document.querySelectorAll('.nav-item');
