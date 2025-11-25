@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickLead Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --secondary: #8B5CF6;
+            --secondary-dark: #7C3AED;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --dark: #1F2937;
+            --light: #F9FAFB;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--gray-800);
+            background-color: var(--gray-50);
+        }
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #E5E7EB;
+            margin-bottom: 20px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6B7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .auth-tab:hover {
+            color: #374151;
+            background: #F9FAFB;
+        }
+
+        .auth-tab.active {
+            color: #3B82F6;
+            border-bottom-color: #3B82F6;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #059669;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--gray-50);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input-with-icon {
+            position: relative;
+        }
+
+        .form-input-with-icon .icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        .form-input-with-icon input {
+            padding-left: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table th,
+        .table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .table th {
+            background-color: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+
+        .badge-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .badge-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 16px;
+            color: var(--gray-600);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-form {
+            margin-bottom: 20px;
+        }
+
+        .login-demo-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            padding: 20px 0;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--gray-700);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h2 {
+            color: white;
+            font-size: 18px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: var(--gray-300);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            color: var(--danger);
+        }
+
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 30px;
+            background: var(--gray-50);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            position: relative;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card:nth-child(2) { border-left-color: var(--success); }
+        .stat-card:nth-child(3) { border-left-color: var(--warning); }
+        .stat-card:nth-child(4) { border-left-color: var(--secondary); }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .btn-icon:hover {
+            background: var(--gray-100);
+        }
+
+        .client-layout {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .client-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 16px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .client-nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .client-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .client-nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .client-nav-link {
+            color: var(--gray-700);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+
+        .client-nav-link:hover,
+        .client-nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .client-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .request-form-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .request-form-card {
+            background: white;
+            padding: 40px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .request-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--gray-800);
+        }
+
+        .request-subtitle {
+            text-align: center;
+            color: var(--gray-600);
+            margin-bottom: 32px;
+        }
+
+        .form-info {
+            text-align: center;
+            color: var(--gray-500);
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .tracking-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .tracking-card {
+            background: white;
+            padding: 32px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tracking-title {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .tracking-search {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .tracking-search input {
+            flex: 1;
+        }
+
+        .lead-details {
+            background: var(--gray-50);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+        }
+
+        .lead-number {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .lead-info {
+            color: var(--gray-600);
+        }
+
+        .status-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--gray-300);
+        }
+
+        .status-item.completed {
+            border-left-color: var(--success);
+        }
+
+        .status-item.current {
+            border-left-color: var(--primary);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--gray-300);
+        }
+
+        .status-item.completed .status-dot {
+            background: var(--success);
+        }
+
+        .status-item.current .status-dot {
+            background: var(--primary);
+        }
+
+        .status-content {
+            flex: 1;
+        }
+
+        .status-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .status-date {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .operator-comment {
+            background: var(--warning);
+            color: white;
+            padding: 16px;
+            border-radius: var(--border-radius);
+            margin-top: 16px;
+        }
+
+        .operator-comment h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .my-requests-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .requests-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .request-item {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .request-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .request-item.success { border-left-color: var(--success); }
+        .request-item.warning { border-left-color: var(--warning); }
+        .request-item.danger { border-left-color: var(--danger); }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .request-id {
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .request-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-dot-sm {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .request-description {
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .request-date {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script>
+        class ApiService {
+            constructor() {
+                this.baseUrl = 'http://localhost/quicklead-backend/api';
+            }
+
+            async request(endpoint, options = {}) {
+                try {
+                    const url = `${this.baseUrl}/${endpoint}`;
+                    const config = {
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        ...options
+                    };
+
+                    if (config.body && typeof config.body !== 'string') {
+                        config.body = JSON.stringify(config.body);
+                    }
+
+                    const response = await fetch(url, config);
+                    const text = await response.text();
+                    
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Неверный JSON ответ: ' + text);
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(data.message || `HTTP ${response.status}`);
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('❌ API Ошибка:', error);
+                    throw error;
+                }
+            }
+
+            async login(username, password) {
+                return this.request('auth.php', {
+                    method: 'POST',
+                    body: { username, password }
+                });
+            }
+
+            async register(userData) {
+                return this.request('register.php', {
+                    method: 'POST',
+                    body: userData
+                });
+            }
+
+            async getLeads() {
+                return this.request('leads.php');
+            }
+
+            async getProjects() {
+                return this.request('projects.php');
+            }
+
+            async getUsers() {
+                return this.request('users.php');
+            }
+        }
+
+        class QuickLeadManager {
+            constructor() {
+                this.currentUser = null;
+                this.currentPage = 'login';
+                this.apiService = new ApiService();
+                this.init();
+            }
+
+            init() {
+                this.render();
+                this.checkAuth();
+            }
+
+            checkAuth() {
+                const savedUser = localStorage.getItem('qlm_user');
+                if (savedUser) {
+                    this.currentUser = JSON.parse(savedUser);
+                    this.navigate('dashboard');
+                }
+            }
+
+            navigate(page) {
+                this.currentPage = page;
+                this.render();
+            }
+
+            login(userData) {
+                this.currentUser = userData;
+                localStorage.setItem('qlm_user', JSON.stringify(userData));
+                this.navigate('dashboard');
+            }
+
+            logout() {
+                this.currentUser = null;
+                localStorage.removeItem('qlm_user');
+                this.navigate('login');
+            }
+
+            async demoLogin(role) {
+                const users = {
+                    admin: { username: 'admin', password: 'password' },
+                    operator: { username: 'operator', password: 'password' },
+                    client: { username: 'client', password: 'password' }
+                };
+                
+                const userCreds = users[role];
+                await this.performLogin(userCreds.username, userCreds.password);
+            }
+
+            async performLogin(username, password) {
+                try {
+                    const result = await this.apiService.login(username, password);
+                    if (result.success) {
+                        this.login(result.user);
+                    } else {
+                        alert('Ошибка авторизации: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Ошибка подключения: ' + error.message);
+                }
+            }
+
+            async handleFormLogin(event) {
+                event.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                if (!username || !password) {
+                    alert('Введите логин и пароль');
+                    return;
+                }
+                
+                await this.performLogin(username, password);
+            }
+
+            render() {
+                const app = document.getElementById('app');
+                
+                if (!this.currentUser) {
+                    app.innerHTML = this.renderLoginPage();
+                    this.attachLoginListeners();
+                    return;
+                }
+
+                if (this.currentUser.role === 'admin' || this.currentUser.role === 'operator') {
+                    app.innerHTML = this.renderAdminLayout();
+                    this.loadAdminContent();
+                } else {
+                    app.innerHTML = this.renderClientLayout();
+                    this.attachClientListeners();
+                }
+            }
+
+            renderLoginPage() {
+                return `
+                    <div class="login-container">
+                        <div class="login-card">
+                            <h1 class="login-title">🔧 QuickLead Manager</h1>
+                            
+                            <div class="auth-tabs" style="margin-bottom: 20px;">
+                                <button class="auth-tab active" onclick="app.showAuthTab('login')">Вход</button>
+                                <button class="auth-tab" onclick="app.showAuthTab('register')">Регистрация</button>
+                            </div>
+                            
+                            <!-- Форма входа -->
+                            <div id="loginFormContainer">
+                                <h2 class="login-subtitle">Вход в систему</h2>
+                                
+                                <form id="loginForm" class="login-form">
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">👤</span>
+                                            <input type="text" id="username" class="form-input" placeholder="Введите логин" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">🔒</span>
+                                            <input type="password" id="password" class="form-input" placeholder="Введите пароль" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary" style="width: 100%; height: 44px;">
+                                        🔐 Войти в систему
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Форма регистрации -->
+                            <div id="registerFormContainer" class="hidden">
+                                <h2 class="login-subtitle">Регистрация</h2>
+                                
+                                <form id="registerForm" class="login-form">
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">👤</span>
+                                            <input type="text" id="regUsername" class="form-input" placeholder="Придумайте логин" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">📝</span>
+                                            <input type="text" id="regName" class="form-input" placeholder="Ваше полное имя" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">📧</span>
+                                            <input type="email" id="regEmail" class="form-input" placeholder="Ваш email" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">🔒</span>
+                                            <input type="password" id="regPassword" class="form-input" placeholder="Придумайте пароль (мин. 6 символов)" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <div class="form-input-with-icon">
+                                            <span class="icon">🔒</span>
+                                            <input type="password" id="regPasswordConfirm" class="form-input" placeholder="Повторите пароль" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-success" style="width: 100%; height: 44px;">
+                                        📝 Зарегистрироваться
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="login-demo-buttons">
+                                <button class="btn btn-secondary" onclick="app.demoLogin('admin')" style="width: 100%; margin-bottom: 10px;">
+                                    Демо: Войти как Админ
+                                </button>
+                                <button class="btn btn-secondary" onclick="app.demoLogin('operator')" style="width: 100%; margin-bottom: 10px;">
+                                    Демо: Войти как Оператор
+                                </button>
+                                <button class="btn btn-secondary" onclick="app.demoLogin('client')" style="width: 100%; margin-bottom: 10px;">
+                                    Демо: Войти как Клиент
+                                </button>
+                            </div>
+
+                            <div style="margin-top: 20px; padding: 12px; background: #F3F4F6; border-radius: 6px; font-size: 12px; color: #6B7280;">
+                                <strong>Демо-доступ:</strong><br>
+                                Логин: admin, operator, client, testuser<br>
+                                Пароль: password
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            showAuthTab(tab) {
+                const loginContainer = document.getElementById('loginFormContainer');
+                const registerContainer = document.getElementById('registerFormContainer');
+                const tabs = document.querySelectorAll('.auth-tab');
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                event.target.classList.add('active');
+                
+                if (tab === 'login') {
+                    loginContainer.classList.remove('hidden');
+                    registerContainer.classList.add('hidden');
+                } else {
+                    loginContainer.classList.add('hidden');
+                    registerContainer.classList.remove('hidden');
+                }
+            }
+
+            async handleRegister(event) {
+                event.preventDefault();
+                
+                const formData = {
+                    username: document.getElementById('regUsername').value,
+                    name: document.getElementById('regName').value,
+                    email: document.getElementById('regEmail').value,
+                    password: document.getElementById('regPassword').value
+                };
+                
+                const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+                
+                // Валидация
+                if (!formData.username || !formData.name || !formData.email || !formData.password) {
+                    alert('Заполните все обязательные поля');
+                    return;
+                }
+                
+                if (formData.password.length < 6) {
+                    alert('Пароль должен быть не менее 6 символов');
+                    return;
+                }
+                
+                if (formData.password !== passwordConfirm) {
+                    alert('Пароли не совпадают');
+                    return;
+                }
+                
+                if (!this.validateEmail(formData.email)) {
+                    alert('Введите корректный email адрес');
+                    return;
+                }
+                
+                try {
+                    const result = await this.apiService.register(formData);
+                    
+                    if (result.success) {
+                        alert(result.message);
+                        // Переключаемся на вкладку входа
+                        this.showAuthTab('login');
+                        // Заполняем логин для удобства
+                        document.getElementById('username').value = formData.username;
+                    } else {
+                        alert('Ошибка регистрации: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Ошибка регистрации: ' + error.message);
+                }
+            }
+
+            validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+            attachLoginListeners() {
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => {
+                        this.handleFormLogin(e);
+                    });
+                }
+
+                const registerForm = document.getElementById('registerForm');
+                if (registerForm) {
+                    registerForm.addEventListener('submit', (e) => {
+                        this.handleRegister(e);
+                    });
+                }
+            }
+
+            renderAdminLayout() {
+                const isOperator = this.currentUser.role === 'operator';
+                
+                return `
+                    <div class="admin-layout">
+                        <aside class="sidebar">
+                            <div class="sidebar-header">
+                                <h2>🏠 ${isOperator ? 'QuickLead Operator' : 'QuickLead Admin'}</h2>
+                            </div>
+                            
+                            <nav class="sidebar-nav">
+                                <a href="#" class="nav-item ${this.currentPage === 'dashboard' ? 'active' : ''}" data-page="dashboard">
+                                    📊 Дашборд
+                                </a>
+                                <a href="#" class="nav-item ${this.currentPage === 'projects' ? 'active' : ''}" data-page="projects">
+                                    📁 ${isOperator ? 'Мои проекты' : 'Проекты'}
+                                </a>
+                                ${!isOperator ? `
+                                    <a href="#" class="nav-item ${this.currentPage === 'users' ? 'active' : ''}" data-page="users">
+                                        👥 Пользователи
+                                    </a>
+                                ` : ''}
+                                <a href="#" class="nav-item ${this.currentPage === 'leads' ? 'active' : ''}" data-page="leads">
+                                    📨 Заявки
+                                </a>
+                                <a href="#" class="nav-item logout-btn" onclick="app.logout()">
+                                    🚪 Выход
+                                </a>
+                            </nav>
+                        </aside>
+                        
+                        <main class="admin-main">
+                            <header class="admin-header">
+                                <h1>${this.getAdminPageTitle()}</h1>
+                                <div class="user-menu">
+                                    <span>👤 ${this.currentUser.name} (${this.currentUser.role})</span>
+                                </div>
+                            </header>
+                            
+                            <div class="admin-content">
+                                <div class="card"><h3>Загрузка...</h3></div>
+                            </div>
+                        </main>
+                    </div>
+                `;
+            }
+
+            getAdminPageTitle() {
+                const isOperator = this.currentUser.role === 'operator';
+                const titles = {
+                    dashboard: '📊 Дашборд',
+                    projects: isOperator ? '📁 Мои проекты' : '📁 Проекты',
+                    users: '👥 Пользователи',
+                    leads: '📨 Заявки'
+                };
+                return titles[this.currentPage] || 'Панель управления';
+            }
+
+            async loadAdminContent() {
+                const contentElement = document.querySelector('.admin-content');
+                if (!contentElement) return;
+
+                try {
+                    let content;
+                    switch (this.currentPage) {
+                        case 'dashboard':
+                            content = await this.renderAdminDashboard();
+                            break;
+                        case 'projects':
+                            content = await this.renderAdminProjects();
+                            break;
+                        case 'users':
+                            content = await this.renderAdminUsers();
+                            break;
+                        case 'leads':
+                            content = await this.renderAdminLeads();
+                            break;
+                        default:
+                            content = await this.renderAdminDashboard();
+                    }
+                    
+                    contentElement.innerHTML = content;
+                    this.attachAdminEventListeners();
+                } catch (error) {
+                    contentElement.innerHTML = `
+                        <div class="card">
+                            <h3>Ошибка загрузки</h3>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
+
+            async renderAdminDashboard() {
+                try {
+                    const leadsResult = await this.apiService.getLeads();
+                    const allLeads = leadsResult.leads || [];
+                    
+                    const isOperator = this.currentUser.role === 'operator';
+                    
+                    // Фильтруем заявки для оператора
+                    let leads = allLeads;
+                    if (isOperator) {
+                        leads = allLeads.filter(lead => [2, 3].includes(lead.project_id));
+                    }
+                    
+                    const totalLeads = leads.length;
+                    const newLeads = leads.filter(lead => lead.status === 'new').length;
+                    const inProgressLeads = leads.filter(lead => lead.status === 'in_progress').length;
+                    const successLeads = leads.filter(lead => lead.status === 'success').length;
+                    
+                    return `
+                        <div class="dashboard">
+                            ${isOperator ? `
+                                <div class="card" style="margin-bottom: 20px; background: #F0F9FF; border-left: 4px solid #0EA5E9;">
+                                    <h3>👋 Добро пожаловать, Оператор!</h3>
+                                    <p>Вы работаете с проектами: <strong>СтройГрад, ТехноМир</strong></p>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-number">${totalLeads}</div>
+                                    <div class="stat-label">
+                                        ${isOperator ? 'Мои заявки' : 'Всего заявок'}
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${newLeads}</div>
+                                    <div class="stat-label">Новые заявки</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${inProgressLeads}</div>
+                                    <div class="stat-label">В работе</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${successLeads}</div>
+                                    <div class="stat-label">Успешно</div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>${isOperator ? 'Мои последние заявки' : 'Последние заявки'}</h3>
+                                <div style="margin-top: 16px;">
+                                    ${leads.slice(0, 5).map(lead => `
+                                        <div style="display: flex; justify-content: space-between; padding: 12px; background: #F9FAFB; border-radius: 8px; margin-bottom: 8px;">
+                                            <div>
+                                                <div style="font-weight: 500;">${lead.name}</div>
+                                                <div style="font-size: 12px; color: #6B7280;">${lead.project_name || 'Без проекта'}</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div style="color: #6B7280;">${lead.phone || lead.email}</div>
+                                                <span class="badge badge-${this.getStatusColor(lead.status)}">${this.getStatusText(lead.status)}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                    ${leads.length === 0 ? `
+                                        <p style="text-align: center; color: #6B7280;">
+                                            ${isOperator ? 'Нет заявок по вашим проектам' : 'Нет заявок'}
+                                        </p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    return `<div class="card"><h3>Ошибка загрузки дашборда: ${error.message}</h3></div>`;
+                }
+            }
+
+            async renderAdminProjects() {
+                try {
+                    const result = await this.apiService.getProjects();
+                    const allProjects = result.projects || [];
+                    
+                    const isOperator = this.currentUser.role === 'operator';
+                    
+                    // Для оператора показываем только назначенные проекты
+                    // В демо-версии назначим оператору проекты с ID 2 и 3
+                    let projects = allProjects;
+                    if (isOperator) {
+                        projects = allProjects.filter(project => [2, 3].includes(project.id));
+                    }
+                    
+                    return `
+                        <div class="projects-page">
+                            <div class="page-header">
+                                ${!isOperator ? `
+                                    <button class="btn btn-primary" onclick="app.createProject()">
+                                        ➕ Создать проект
+                                    </button>
+                                ` : `
+                                    <h3>Мои проекты для работы</h3>
+                                `}
+                            </div>
+                            
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Название</th>
+                                        <th>API-ключ</th>
+                                        <th>Описание</th>
+                                        ${!isOperator ? '<th>Действия</th>' : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${projects.map(project => `
+                                        <tr>
+                                            <td>${project.id}</td>
+                                            <td>${project.name}</td>
+                                            <td><code>${project.api_key}</code></td>
+                                            <td>${project.description || ''}</td>
+                                            ${!isOperator ? `
+                                                <td>
+                                                    <button class="btn-icon" onclick="app.editItem('project', ${project.id})">✏️</button>
+                                                    <button class="btn-icon" style="color: #EF4444;" onclick="app.deleteItem('project', ${project.id})">🗑️</button>
+                                                </td>
+                                            ` : ''}
+                                        </tr>
+                                    `).join('')}
+                                    ${projects.length === 0 ? `
+                                        <tr>
+                                            <td colspan="${isOperator ? '4' : '5'}" style="text-align: center; color: #6B7280;">
+                                                ${isOperator ? 'Вам не назначены проекты' : 'Нет проектов'}
+                                            </td>
+                                        </tr>
+                                    ` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (error) {
+                    return `<div class="card"><h3>Ошибка загрузки проектов: ${error.message}</h3></div>`;
+                }
+            }
+
+            async renderAdminUsers() {
+                const isOperator = this.currentUser.role === 'operator';
+                
+                if (isOperator) {
+                    return `
+                        <div class="card">
+                            <h3>⛔ Доступ запрещен</h3>
+                            <p>У вас нет прав для просмотра этого раздела.</p>
+                            <p>Обратитесь к администратору системы.</p>
+                        </div>
+                    `;
+                }
+                
+                try {
+                    const result = await this.apiService.getUsers();
+                    const users = result.users || [];
+                    
+                    return `
+                        <div class="users-page">
+                            <div class="page-header">
+                                <button class="btn btn-primary" onclick="app.createUser()">
+                                    👤 Добавить пользователя
+                                </button>
+                            </div>
+                            
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Имя</th>
+                                        <th>Email</th>
+                                        <th>Роль</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${users.map(user => `
+                                        <tr>
+                                            <td>${user.id}</td>
+                                            <td>${user.name}</td>
+                                            <td>${user.email}</td>
+                                            <td><span class="badge badge-${user.role === 'admin' ? 'danger' : 'primary'}">${user.role}</span></td>
+                                            <td>
+                                                <button class="btn-icon" onclick="app.editItem('user', ${user.id})">✏️</button>
+                                                <button class="btn-icon" style="color: #EF4444;" onclick="app.deleteItem('user', ${user.id})">🗑️</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (error) {
+                    return `<div class="card"><h3>Ошибка загрузки пользователей: ${error.message}</h3></div>`;
+                }
+            }
+
+            async renderAdminLeads() {
+                try {
+                    const result = await this.apiService.getLeads();
+                    const allLeads = result.leads || [];
+                    
+                    const isOperator = this.currentUser.role === 'operator';
+                    
+                    // Для оператора фильтруем заявки по его проектам
+                    let leads = allLeads;
+                    if (isOperator) {
+                        // В демо-версии оператор работает с проектами ID 2 и 3
+                        leads = allLeads.filter(lead => [2, 3].includes(lead.project_id));
+                    }
+                    
+                    return `
+                        <div class="leads-page">
+                            <div class="page-header">
+                                <div class="page-actions">
+                                    <button class="btn btn-secondary" onclick="app.showStatistics()">📊 Статистика</button>
+                                    <button class="btn btn-primary" onclick="app.exportData()">📤 Выгрузить</button>
+                                </div>
+                            </div>
+                            
+                            ${isOperator ? `
+                                <div class="card" style="margin-bottom: 20px; background: #EFF6FF; border-left: 4px solid #3B82F6;">
+                                    <h4>📋 Фильтр заявок</h4>
+                                    <p>Показываются заявки только по вашим проектам: <strong>СтройГрад, ТехноМир</strong></p>
+                                </div>
+                            ` : ''}
+                            
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Имя</th>
+                                        <th>Телефон</th>
+                                        <th>Проект</th>
+                                        <th>Статус</th>
+                                        <th>Дата</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${leads.map(lead => `
+                                        <tr>
+                                            <td>${lead.id}</td>
+                                            <td>${lead.name}</td>
+                                            <td>${lead.phone || '-'}</td>
+                                            <td>${lead.project_name || '-'}</td>
+                                            <td>
+                                                <span class="badge badge-${this.getStatusColor(lead.status)}">
+                                                    ${this.getStatusText(lead.status)}
+                                                </span>
+                                            </td>
+                                            <td>${new Date(lead.created_at).toLocaleDateString()}</td>
+                                            <td>
+                                                <button class="btn-icon" onclick="app.editLeadStatus(${lead.id}, '${lead.status}')">
+                                                    ${isOperator ? '✏️' : '👁️'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                    ${leads.length === 0 ? `
+                                        <tr>
+                                            <td colspan="7" style="text-align: center; color: #6B7280;">
+                                                ${isOperator ? 'Нет заявок по вашим проектам' : 'Нет заявок'}
+                                            </td>
+                                        </tr>
+                                    ` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (error) {
+                    return `<div class="card"><h3>Ошибка загрузки заявок: ${error.message}</h3></div>`;
+                }
+            }
+
+            renderClientLayout() {
+                return `
+                    <div class="client-layout">
+                        <header class="client-header">
+                            <nav class="client-nav">
+                                <div class="client-logo">🚀 QuickLead</div>
+                                <div class="client-nav-links">
+                                    <a href="#" class="client-nav-link ${this.currentPage === 'client-request' ? 'active' : ''}" 
+                                       onclick="app.navigate('client-request')">Оставить заявку</a>
+                                    <a href="#" class="client-nav-link ${this.currentPage === 'client-status' ? 'active' : ''}" 
+                                       onclick="app.navigate('client-status')">Отслеживание</a>
+                                    <a href="#" class="client-nav-link ${this.currentPage === 'client-requests' ? 'active' : ''}" 
+                                       onclick="app.navigate('client-requests')">Мои заявки</a>
+                                    <span style="color: var(--gray-600);">👤 ${this.currentUser.name}</span>
+                                    <a href="#" class="client-nav-link" onclick="app.logout()">Выйти</a>
+                                </div>
+                            </nav>
+                        </header>
+                        
+                        <main class="client-main">
+                            ${this.getClientPageContent()}
+                        </main>
+                    </div>
+                `;
+            }
+
+            getClientPageContent() {
+                switch (this.currentPage) {
+                    case 'client-request':
+                        return this.renderClientRequestForm();
+                    case 'client-status':
+                        return this.renderClientStatus();
+                    case 'client-requests':
+                        return this.renderClientRequests();
+                    default:
+                        return this.renderClientRequestForm();
+                }
+            }
+            editLeadStatus(leadId, currentStatus) {
+                const isOperator = this.currentUser.role === 'operator';
+                
+                if (isOperator) {
+                    // Оператор может менять статус заявки
+                    const statuses = [
+                        { value: 'new', label: '🆕 Новая' },
+                        { value: 'in_progress', label: '⚡ В работе' },
+                        { value: 'callback', label: '📞 Перезвонить' },
+                        { value: 'success', label: '✅ Успешно' },
+                        { value: 'failed', label: '❌ Неудача' }
+                    ];
+                    
+                    let statusOptions = '';
+                    statuses.forEach(status => {
+                        const selected = status.value === currentStatus ? 'selected' : '';
+                        statusOptions += `<option value="${status.value}" ${selected}>${status.label}</option>`;
+                    });
+                    
+                    const newStatus = prompt(
+                        `Изменить статус заявки #${leadId}\n\nВыберите новый статус:`,
+                        currentStatus
+                    );
+                    
+                    if (newStatus && newStatus !== currentStatus) {
+                        alert(`✅ Статус заявки #${leadId} изменен с "${this.getStatusText(currentStatus)}" на "${this.getStatusText(newStatus)}"`);
+                        // Здесь будет вызов API для обновления статуса
+                    }
+                } else {
+                    // Админ просто просматривает
+                    alert(`Просмотр заявки #${leadId}\nТекущий статус: ${this.getStatusText(currentStatus)}`);
+                }
+            }
+
+            renderClientRequestForm() {
+                return `
+                    <div class="request-form-container">
+                        <div class="request-form-card">
+                            <h1 class="request-title">🚀 Оставить заявку</h1>
+                            <p class="request-subtitle">Ваши контактные данные</p>
+                            
+                            <form id="clientRequestForm" class="request-form">
+                                <div class="form-group">
+                                    <div class="form-input-with-icon">
+                                        <span class="icon">👤</span>
+                                        <input type="text" id="clientName" class="form-input" placeholder="Ваше имя" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="form-input-with-icon">
+                                        <span class="icon">📞</span>
+                                        <input type="tel" id="clientPhone" class="form-input" placeholder="+7 (___) ___-____" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="form-input-with-icon">
+                                        <span class="icon">📧</span>
+                                        <input type="email" id="clientEmail" class="form-input" placeholder="your@email.com">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="form-input-with-icon">
+                                        <span class="icon">💬</span>
+                                        <textarea id="clientMessage" class="form-input" placeholder="Опишите вашу проблему или вопрос" rows="4" required></textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Проект</label>
+                                    <select id="clientProject" class="form-input">
+                                        <option value="1">Рога и копыта</option>
+                                        <option value="2">СтройГрад</option>
+                                        <option value="3">ТехноМир</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary" style="width: 100%; height: 44px;">
+                                    📨 ОТПРАВИТЬ ЗАЯВКУ
+                                </button>
+                            </form>
+                            
+                            <p class="form-info">
+                                После отправки вы получите номер для отслеживания заявки
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderClientStatus() {
+                return `
+                    <div class="tracking-container">
+                        <div class="tracking-card">
+                            <h2 class="tracking-title">📋 Отслеживание заявки</h2>
+                            
+                            <div class="tracking-search">
+                                <input type="text" class="form-input" id="leadSearchInput" placeholder="Введите номер заявки (например: 1, 2, 3)">
+                                <button class="btn btn-primary" onclick="app.searchLead()">🔍 Найти</button>
+                            </div>
+                            
+                            <div id="leadDetails" class="hidden"></div>
+                            
+                            <div id="noLeadFound" class="hidden" style="text-align: center; padding: 40px; color: var(--gray-500);">
+                                Введите номер заявки для отслеживания
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async renderClientRequests() {
+                try {
+                    const result = await this.apiService.getLeads();
+                    const userLeads = result.leads || [];
+                    
+                    return `
+                        <div class="my-requests-container">
+                            <h1 style="margin-bottom: 24px; font-size: 28px;">📂 Мои заявки</h1>
+                            
+                            <div class="requests-list">
+                                ${userLeads.map(lead => `
+                                    <div class="request-item ${lead.status}" onclick="app.showLeadDetails(${lead.id})">
+                                        <div class="request-header">
+                                            <div class="request-id">#${lead.id}</div>
+                                            <div class="request-status">
+                                                <span class="status-dot-sm" style="background: var(--${this.getStatusColor(lead.status)})"></span>
+                                                ${this.getStatusText(lead.status)}
+                                            </div>
+                                        </div>
+                                        <div class="request-description">${lead.message || 'Заявка на услугу'}</div>
+                                        <div class="request-date">Создано: ${new Date(lead.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                `).join('')}
+                                ${userLeads.length === 0 ? '<p style="text-align: center; color: #6B7280;">У вас пока нет заявок</p>' : ''}
+                            </div>
+                            
+                            <button class="btn btn-primary" onclick="app.navigate('client-request')" style="margin-top: 20px; width: 100%;">
+                                ➕ Создать новую заявку
+                            </button>
+                        </div>
+                    `;
+                } catch (error) {
+                    return `<div class="card"><h3>Ошибка загрузки заявок: ${error.message}</h3></div>`;
+                }
+            }
+
+            getStatusColor(status) {
+                const colors = {
+                    'new': 'primary',
+                    'in_progress': 'warning',
+                    'callback': 'warning',
+                    'success': 'success',
+                    'failed': 'danger'
+                };
+                return colors[status] || 'primary';
+            }
+
+            getStatusText(status) {
+                const texts = {
+                    'new': 'Новая',
+                    'in_progress': 'В работе',
+                    'callback': 'Перезвонить',
+                    'success': 'Успешно',
+                    'failed': 'Неудача'
+                };
+                return texts[status] || status;
+            }
+
+            createProject() {
+                const projectName = prompt('Введите название нового проекта:');
+                if (projectName) {
+                    alert(`Проект "${projectName}" создан! (демо)`);
+                }
+            }
+
+            createUser() {
+                alert('Форма создания пользователя будет реализована в следующей версии');
+            }
+
+            exportData() {
+                alert('Данные выгружены в CSV! (демо)');
+            }
+
+            showStatistics() {
+                alert('Открывается статистика... (демо)');
+            }
+
+            editItem(type, id) {
+                alert(`Редактирование ${type} #${id} (демо)`);
+            }
+
+            deleteItem(type, id) {
+                if (confirm(`Вы уверены что хотите удалить ${type} #${id}?`)) {
+                    alert(`${type} #${id} удален! (демо)`);
+                }
+            }
+
+            async searchLead() {
+                const input = document.getElementById('leadSearchInput');
+                const leadDetails = document.getElementById('leadDetails');
+                const noLeadFound = document.getElementById('noLeadFound');
+                
+                if (!input.value.trim()) {
+                    alert('Введите номер заявки');
+                    return;
+                }
+                
+                try {
+                    const result = await this.apiService.getLeads();
+                    const leads = result.leads || [];
+                    const lead = leads.find(l => l.id == input.value);
+                    
+                    if (lead) {
+                        leadDetails.classList.remove('hidden');
+                        noLeadFound.classList.add('hidden');
+                        
+                        leadDetails.innerHTML = `
+                            <div class="lead-details">
+                                <div class="lead-number">Заявка #${lead.id} от ${new Date(lead.created_at).toLocaleDateString()}</div>
+                                <div class="lead-info">${lead.name} • ${lead.phone || lead.email}</div>
+                            </div>
+                            
+                            <h3 style="margin-bottom: 16px;">Статус заявки</h3>
+                            <div class="status-timeline">
+                                <div class="status-item ${['new', 'in_progress', 'callback', 'success', 'failed'].indexOf(lead.status) >= 0 ? 'completed' : ''}">
+                                    <div class="status-dot"></div>
+                                    <div class="status-content">
+                                        <div class="status-name">Новая</div>
+                                        <div class="status-date">${new Date(lead.created_at).toLocaleString()}</div>
+                                    </div>
+                                </div>
+                                <div class="status-item ${['in_progress', 'callback', 'success', 'failed'].indexOf(lead.status) >= 0 ? 'completed' : ''}">
+                                    <div class="status-dot"></div>
+                                    <div class="status-content">
+                                        <div class="status-name">В работе</div>
+                                        <div class="status-date">${lead.status !== 'new' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                    </div>
+                                </div>
+                                <div class="status-item ${lead.status === 'callback' ? 'current' : (['success', 'failed'].indexOf(lead.status) >= 0 ? 'completed' : '')}">
+                                    <div class="status-dot"></div>
+                                    <div class="status-content">
+                                        <div class="status-name">Перезвонить</div>
+                                        <div class="status-date">${lead.status === 'callback' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                    </div>
+                                </div>
+                                <div class="status-item ${lead.status === 'success' ? 'completed' : ''}">
+                                    <div class="status-dot"></div>
+                                    <div class="status-content">
+                                        <div class="status-name">Успешно</div>
+                                        <div class="status-date">${lead.status === 'success' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                    </div>
+                                </div>
+                                <div class="status-item ${lead.status === 'failed' ? 'completed' : ''}">
+                                    <div class="status-dot"></div>
+                                    <div class="status-content">
+                                        <div class="status-name">Неудача</div>
+                                        <div class="status-date">${lead.status === 'failed' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${lead.message ? `
+                                <div class="operator-comment">
+                                    <h4>Описание заявки:</h4>
+                                    "${lead.message}"
+                                </div>
+                            ` : ''}
+                        `;
+                    } else {
+                        leadDetails.classList.add('hidden');
+                        noLeadFound.classList.remove('hidden');
+                        noLeadFound.innerHTML = 'Заявка не найдена. Проверьте номер и попробуйте снова.';
+                    }
+                } catch (error) {
+                    alert('Ошибка поиска заявки: ' + error.message);
+                }
+            }
+
+            showLeadDetails(leadId) {
+                alert(`Детали заявки #${leadId}\n\nЭта функция откроет полную информацию о заявке.`);
+            }
+
+            async submitClientRequest(event) {
+                event.preventDefault();
+                
+                const formData = {
+                    name: document.getElementById('clientName').value,
+                    phone: document.getElementById('clientPhone').value,
+                    email: document.getElementById('clientEmail').value,
+                    message: document.getElementById('clientMessage').value,
+                    project_id: document.getElementById('clientProject').value
+                };
+                
+                if (!formData.name || !formData.phone || !formData.message) {
+                    alert('Заполните обязательные поля: имя, телефон и описание');
+                    return;
+                }
+                
+                try {
+                    const newId = Math.floor(Math.random() * 1000) + 1000;
+                    alert(`✅ Заявка #${newId} успешно создана!\n\nС вами свяжутся в ближайшее время.`);
+                    
+                    document.getElementById('clientRequestForm').reset();
+                    this.navigate('client-status');
+                    
+                } catch (error) {
+                    alert('Ошибка создания заявки: ' + error.message);
+                }
+            }
+
+            attachAdminEventListeners() {
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    if (!item.classList.contains('logout-btn')) {
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const page = item.dataset.page;
+                            this.navigate(page);
+                            setTimeout(() => this.loadAdminContent(), 100);
+                        });
+                    }
+                });
+            }
+
+            attachClientListeners() {
+                const clientForm = document.getElementById('clientRequestForm');
+                if (clientForm) {
+                    clientForm.addEventListener('submit', (e) => {
+                        this.submitClientRequest(e);
+                    });
+                }
+
+                const searchInput = document.getElementById('leadSearchInput');
+                if (searchInput) {
+                    searchInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.searchLead();
+                        }
+                    });
+                }
+            }
+        }
+
+        const app = new QuickLeadManager();
+        window.app = app;
+    </script>
+</body>
+</html>
