@@ -891,6 +891,11 @@
             navigate(page) {
                 this.currentPage = page;
                 this.render();
+                
+                // Если это клиент - загрузить контент асинхронно
+                if (this.currentUser && this.currentUser.role === 'client') {
+                    setTimeout(() => this.loadClientContent(), 100);
+                }
             }
 
             login(userData) {
@@ -956,7 +961,7 @@
                     this.loadAdminContent();
                 } else {
                     app.innerHTML = this.renderClientLayout();
-                    this.attachClientListeners();
+                    this.loadClientContent(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
                 }
             }
 
@@ -1533,11 +1538,10 @@
                                 <div class="client-logo">🚀 QuickLead</div>
                                 <div class="client-nav-links">
                                     <a href="#" class="client-nav-link ${this.currentPage === 'client-request' ? 'active' : ''}" 
-                                       onclick="app.navigate('client-request')">Оставить заявку</a>
-                                    <a href="#" class="client-nav-link ${this.currentPage === 'client-status' ? 'active' : ''}" 
-                                       onclick="app.navigate('client-status')">Отслеживание</a>
+                                    onclick="app.navigate('client-request')">Оставить заявку</a>
+                                    <!-- УБРАТЬ ЭТУ СТРОКУ -->
                                     <a href="#" class="client-nav-link ${this.currentPage === 'client-requests' ? 'active' : ''}" 
-                                       onclick="app.navigate('client-requests')">Мои заявки</a>
+                                    onclick="app.navigate('client-requests')">Мои заявки</a>
                                     <span style="color: var(--gray-600);">👤 ${this.currentUser.name}</span>
                                     <a href="#" class="client-nav-link" onclick="app.logout()">Выйти</a>
                                 </div>
@@ -1550,13 +1554,34 @@
                     </div>
                 `;
             }
+            async loadClientContent() {
+                const contentElement = document.querySelector('.client-main');
+                if (!contentElement) return;
+
+                try {
+                    let content;
+                    switch (this.currentPage) {
+                        case 'client-request':
+                            content = this.renderClientRequestForm();
+                            break;
+                        case 'client-requests':
+                            content = await this.renderClientRequests();
+                            break;
+                        default:
+                            content = this.renderClientRequestForm();
+                    }
+                    
+                    contentElement.innerHTML = content;
+                    this.attachClientListeners();
+                } catch (error) {
+                    contentElement.innerHTML = `<div class="card"><h3>Ошибка: ${error.message}</h3></div>`;
+                }
+            }
 
             getClientPageContent() {
                 switch (this.currentPage) {
                     case 'client-request':
                         return this.renderClientRequestForm();
-                    case 'client-status':
-                        return this.renderClientStatus();
                     case 'client-requests':
                         return this.renderClientRequests();
                     default:
@@ -1775,7 +1800,8 @@
 
             async renderClientRequests() {
                 try {
-                    const result = await this.apiService.getLeads();
+                    // ИЗМЕНИТЬ ЭТУ СТРОКУ
+                    const result = await this.apiService.getLeads(this.currentUser.id, this.currentUser.role);
                     const userLeads = result.leads || [];
                     
                     return `
@@ -1946,76 +1972,76 @@
             }
 
             async submitClientRequest(event) {
-    event.preventDefault();
-    
-    // Получаем данные из формы
-    const formData = {
-        project_id: parseInt(document.getElementById('clientProject').value),
-        name: document.getElementById('clientName').value.trim(),
-        phone: document.getElementById('clientPhone').value.trim(),
-        email: document.getElementById('clientEmail').value.trim(),
-        message: document.getElementById('clientMessage').value.trim()
-    };
-    
-    console.log('📝 Данные для отправки:', formData);
-    
-    // Валидация
-    if (!formData.name) {
-        alert('Введите ваше имя');
-        return;
-    }
-    
-    if (!formData.phone) {
-        alert('Введите ваш телефон');
-        return;
-    }
-    
-    if (!formData.message) {
-        alert('Опишите вашу проблему или вопрос');
-        return;
-    }
-    
-    // Показываем индикатор загрузки
-    const submitBtn = document.querySelector('#clientRequestForm button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '⏳ Отправка...';
-    submitBtn.disabled = true;
-    
-    try {
-        console.log('🔄 Отправка заявки в API...');
-        const result = await this.apiService.createLead(formData);
-        console.log('✅ Ответ от API:', result);
-        
-        if (result.success) {
-            alert(`✅ Заявка #${result.lead_id} успешно создана!\n\nС вами свяжутся в ближайшее время.`);
-            
-            // Очищаем форму
-            document.getElementById('clientRequestForm').reset();
-            
-            // Переходим к отслеживанию
-            this.navigate('client-status');
-            
-            // Автоматически заполняем номер заявки в поиске
-            setTimeout(() => {
-                const searchInput = document.getElementById('leadSearchInput');
-                if (searchInput) {
-                    searchInput.value = result.lead_id;
-                    this.searchLead();
+                event.preventDefault();
+                
+                const formData = {
+                    project_id: parseInt(document.getElementById('clientProject').value),
+                    name: document.getElementById('clientName').value.trim(),
+                    phone: document.getElementById('clientPhone').value.trim(),
+                    email: document.getElementById('clientEmail').value.trim(),
+                    message: document.getElementById('clientMessage').value.trim(),
+                    user_id: this.currentUser.id // ← ДОБАВИТЬ ЭТУ СТРОКУ
+                };
+                
+                console.log('📝 Данные для отправки:', formData);
+                
+                // Валидация
+                if (!formData.name) {
+                    alert('Введите ваше имя');
+                    return;
                 }
-            }, 1000);
-            
-        } else {
-            throw new Error(result.message);
-        }
-    } catch (error) {
-        console.error('❌ Ошибка создания заявки:', error);
-        alert('❌ Ошибка создания заявки: ' + error.message);
-    } finally {
-        // Восстанавливаем кнопку
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-}
+                
+                if (!formData.phone) {
+                    alert('Введите ваш телефон');
+                    return;
+                }
+                
+                if (!formData.message) {
+                    alert('Опишите вашу проблему или вопрос');
+                    return;
+                }
+                
+                // Показываем индикатор загрузки
+                const submitBtn = document.querySelector('#clientRequestForm button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '⏳ Отправка...';
+                submitBtn.disabled = true;
+                
+                try {
+                    console.log('🔄 Отправка заявки в API...');
+                    const result = await this.apiService.createLead(formData);
+                    console.log('✅ Ответ от API:', result);
+                    
+                    if (result.success) {
+                        alert(`✅ Заявка #${result.lead_id} успешно создана!\n\nС вами свяжутся в ближайшее время.`);
+                        
+                        // Очищаем форму
+                        document.getElementById('clientRequestForm').reset();
+                        
+                        // Переходим к отслеживанию
+                        this.navigate('client-status');
+                        
+                        // Автоматически заполняем номер заявки в поиске
+                        setTimeout(() => {
+                            const searchInput = document.getElementById('leadSearchInput');
+                            if (searchInput) {
+                                searchInput.value = result.lead_id;
+                                this.searchLead();
+                            }
+                        }, 1000);
+                        
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка создания заявки:', error);
+                    alert('❌ Ошибка создания заявки: ' + error.message);
+                } finally {
+                    // Восстанавливаем кнопку
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
 
             attachAdminEventListeners() {
                 const navItems = document.querySelectorAll('.nav-item');
@@ -2046,6 +2072,97 @@
                             this.searchLead();
                         }
                     });
+                }
+            }
+            async showLeadDetails(leadId) {
+                try {
+                    const result = await this.apiService.getLeads(this.currentUser.id, this.currentUser.role);
+                    const leads = result.leads || [];
+                    const lead = leads.find(l => l.id == leadId);
+                    
+                    if (lead) {
+                        const modalHtml = `
+                            <div class="modal-overlay" onclick="app.closeModal()">
+                                <div class="modal" onclick="event.stopPropagation()" style="max-width: 600px;">
+                                    <div class="modal-header">
+                                        <h3>📋 Детали заявки #${lead.id}</h3>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="lead-details">
+                                            <div class="lead-number">Заявка #${lead.id}</div>
+                                            <div class="lead-info">
+                                                <strong>Имя:</strong> ${lead.name}<br>
+                                                <strong>Телефон:</strong> ${lead.phone || 'Не указан'}<br>
+                                                <strong>Email:</strong> ${lead.email || 'Не указан'}<br>
+                                                <strong>Проект:</strong> ${lead.project_name || 'Не указан'}<br>
+                                                <strong>Дата создания:</strong> ${new Date(lead.created_at).toLocaleString()}
+                                            </div>
+                                        </div>
+                                        
+                                        <h3 style="margin-bottom: 16px; margin-top: 24px;">📊 Статус заявки</h3>
+                                        <div class="status-timeline">
+                                            <div class="status-item ${['new', 'in_progress', 'callback', 'success', 'failed'].indexOf(lead.status) >= 0 ? 'completed' : ''}">
+                                                <div class="status-dot"></div>
+                                                <div class="status-content">
+                                                    <div class="status-name">Новая</div>
+                                                    <div class="status-date">${new Date(lead.created_at).toLocaleString()}</div>
+                                                </div>
+                                            </div>
+                                            <div class="status-item ${['in_progress', 'callback', 'success', 'failed'].indexOf(lead.status) >= 0 ? 'completed' : ''}">
+                                                <div class="status-dot"></div>
+                                                <div class="status-content">
+                                                    <div class="status-name">В работе</div>
+                                                    <div class="status-date">${lead.status !== 'new' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                                </div>
+                                            </div>
+                                            <div class="status-item ${lead.status === 'callback' ? 'current' : (['success', 'failed'].indexOf(lead.status) >= 0 ? 'completed' : '')}">
+                                                <div class="status-dot"></div>
+                                                <div class="status-content">
+                                                    <div class="status-name">Перезвонить</div>
+                                                    <div class="status-date">${lead.status === 'callback' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                                </div>
+                                            </div>
+                                            <div class="status-item ${lead.status === 'success' ? 'completed' : ''}">
+                                                <div class="status-dot"></div>
+                                                <div class="status-content">
+                                                    <div class="status-name">Успешно</div>
+                                                    <div class="status-date">${lead.status === 'success' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                                </div>
+                                            </div>
+                                            <div class="status-item ${lead.status === 'failed' ? 'completed' : ''}">
+                                                <div class="status-dot"></div>
+                                                <div class="status-content">
+                                                    <div class="status-name">Неудача</div>
+                                                    <div class="status-date">${lead.status === 'failed' ? new Date(lead.updated_at).toLocaleString() : '--.-- --:--'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        ${lead.message ? `
+                                            <div class="operator-comment" style="margin-top: 20px;">
+                                                <h4>📝 Описание заявки:</h4>
+                                                "${lead.message}"
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-primary" onclick="app.closeModal()">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        this.showModal(modalHtml);
+                    }
+                } catch (error) {
+                    alert('Ошибка загрузки деталей заявки: ' + error.message);
+                }
+            }
+
+            closeModal() {
+                const modal = document.querySelector('.modal-overlay');
+                if (modal) {
+                    modal.remove();
                 }
             }
         }
