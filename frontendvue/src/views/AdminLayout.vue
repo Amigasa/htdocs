@@ -4,8 +4,8 @@
       <div class="sidebar-header"><h2>🏠 QuickLead Admin</h2></div>
       <nav class="sidebar-nav">
         <router-link to="/admin" class="nav-item" data-page="dashboard" active-class="active">📊 Дашборд</router-link>
-        <router-link to="/admin/projects" class="nav-item" data-page="projects" active-class="active">📁 Проекты</router-link>
-        <router-link to="/admin/users" class="nav-item" data-page="users" active-class="active">👥 Пользователи</router-link>
+        <router-link v-if="isAdmin" to="/admin/projects" class="nav-item" data-page="projects" active-class="active">📁 Проекты</router-link>
+        <router-link v-if="isAdmin" to="/admin/users" class="nav-item" data-page="users" active-class="active">👥 Пользователи</router-link>
         <router-link to="/admin/leads" class="nav-item" data-page="leads" active-class="active">📨 Заявки</router-link>
         <button class="nav-item logout-btn" data-page="logout" @click="logout">🚪 Выход</button>
       </nav>
@@ -27,6 +27,8 @@ export default {
     const router = useRouter();
     const route = useRoute();
     const user = JSON.parse(localStorage.getItem('qlm_user') || 'null');
+    const isAdmin = user?.role === 'admin';
+    const isOperator = user?.role === 'operator';
     const pageTitle = computed(() => {
       const name = route.name || 'admin-dashboard';
       const mapping = {
@@ -37,7 +39,7 @@ export default {
       };
       return mapping[name] || 'Панель управления';
     });
-    return { router, route, userName: user?.name || 'Guest', userRole: user?.role || 'guest', pageTitle };
+    return { router, route, userName: user?.name || 'Guest', userRole: user?.role || 'guest', pageTitle, isAdmin, isOperator };
   },
   methods: {
     logout() { localStorage.removeItem('qlm_user'); this.$router.push('/login'); }

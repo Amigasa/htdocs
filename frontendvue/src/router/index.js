@@ -17,10 +17,12 @@ const routes = [
     { path: 'projects', name: 'admin-projects', component: Projects },
     { path: 'users', name: 'admin-users', component: Users },
     { path: 'leads', name: 'admin-leads', component: Leads }
+    , { path: 'leads/:id', name: 'admin-lead-detail', component: () => import('../views/AdminLeadDetail.vue') }
   ]},
   { path: '/client', name: 'client', component: ClientLayout, children: [
     { path: '', name: 'client-request', component: ClientRequest },
-    { path: 'requests', name: 'client-requests', component: ClientRequests }
+    { path: 'requests', name: 'client-requests', component: ClientRequests },
+    { path: 'requests/:id', name: 'client-request-detail', component: () => import('../views/ClientRequestDetail.vue') }
   ]},
   { path: '/:catchAll(.*)', redirect: '/login' }
 ];

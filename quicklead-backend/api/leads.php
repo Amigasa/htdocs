@@ -18,19 +18,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // GET - получение всех заявок
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Support optional filtering: id, client-specific user_id+user_role
+    $params = [];
+    $conditions = [];
+    if (!empty($_GET['id'])) {
+        $conditions[] = 'l.id = :id';
+        $params[':id'] = intval($_GET['id']);
+    }
+    if (!empty($_GET['user_role']) && $_GET['user_role'] === 'client' && !empty($_GET['user_id'])) {
+        $conditions[] = 'l.user_id = :user_id';
+        $params[':user_id'] = intval($_GET['user_id']);
+    }
+    // If authenticated as client but no explicit user_id param, filter by header user id
+    $authUser = getAuthenticatedUser();
+    if ($authUser && $authUser['role'] === 'client' && empty($params[':user_id'])) {
+        $conditions[] = 'l.user_id = :user_id';
+        $params[':user_id'] = intval($authUser['id']);
+    }
+    $where = '';
+    if (count($conditions) > 0) $where = 'WHERE ' . implode(' AND ', $conditions);
+
     $query = "SELECT l.*, p.name as project_name 
               FROM leads l 
               LEFT JOIN projects p ON l.project_id = p.id 
+              $where
               ORDER BY l.created_at DESC";
-    
+
+    // If incremental view requested, increment views count for a specific lead id
+    if (!empty($params[':id']) && (!empty($_GET['increment_view']) || isset($_SERVER['HTTP_X_INCREMENT_VIEW']))) {
+        $incQuery = "UPDATE leads SET views = COALESCE(views, 0) + 1 WHERE id = :inc_id";
+        $incStmt = $db->prepare($incQuery);
+        $incStmt->bindValue(':inc_id', $params[':id'], PDO::PARAM_INT);
+        $incStmt->execute();
+    }
     $stmt = $db->prepare($query);
+    foreach ($params as $k => $v) $stmt->bindValue($k, $v, PDO::PARAM_INT);
     $stmt->execute();
-    
+
     $leads = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $leads[] = $row;
     }
-    
+
     sendResponse(['success' => true, 'leads' => $leads]);
 }
 
@@ -132,6 +161,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
         sendResponse(['success' => false, 'message' => 'Неверный статус. Допустимые значения: new, in_progress, success'], 400);
     }
     
+    // Only operator or admin can update lead status
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || !in_array($authUser['role'], ['admin', 'operator'])) {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     try {
         $query = "UPDATE leads SET 
             status = :status,

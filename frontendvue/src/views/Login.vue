@@ -109,7 +109,8 @@ export default {
       } catch (err) { alert('Ошибка: ' + err.message); }
     },
     async demoLogin(role) {
-      const users = { admin: { username: 'admin', role: 'admin', name: 'Admin' }, operator: { username: 'operator', role: 'operator', name: 'Operator' }, client: { username: 'client', role: 'client', name: 'Client' } };
+      // Set IDs to match local DB seeded users for demo: admin id 1, operator id 2, client id 3
+      const users = { admin: { id:1, username: 'admin', role: 'admin', name: 'Admin' }, operator: { id:2, username: 'operator', role: 'operator', name: 'Operator' }, client: { id:3, username: 'client', role: 'client', name: 'Client' } };
       localStorage.setItem('qlm_user', JSON.stringify(users[role]));
       if (users[role].role === 'admin' || users[role].role === 'operator') this.router.push('/admin'); else this.router.push('/client');
     }

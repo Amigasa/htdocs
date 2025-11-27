@@ -6,8 +6,16 @@ export default class ApiService {
   async request(endpoint, options = {}) {
     try {
       const url = `${this.baseUrl}/${endpoint}`;
+      // Attach user info to headers for backend role checks (demo mode)
+      const user = JSON.parse(localStorage.getItem('qlm_user') || 'null');
+      const defaultHeaders = { 'Content-Type': 'application/json' };
+      if (user) {
+        if (user.id) defaultHeaders['X-User-Id'] = String(user.id);
+        if (user.role) defaultHeaders['X-User-Role'] = String(user.role);
+        if (user.username) defaultHeaders['X-User-Name'] = String(user.username);
+      }
       const config = {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...defaultHeaders },
         ...options
       };
       if (config.body && typeof config.body !== 'string') config.body = JSON.stringify(config.body);
@@ -35,6 +43,7 @@ export default class ApiService {
   getUsers() { return this.request('users.php'); }
   createLead(leadData) { return this.request('leads.php', { method: 'POST', body: leadData }); }
   updateLeadStatus(leadId, status) { return this.request('leads.php', { method: 'PUT', body: { id: leadId, status } }); }
+  getLead(id) { return this.request('leads.php?id=' + id + '&increment_view=1'); }
   createProject(projectData) { return this.request('projects.php', { method: 'POST', body: projectData }); }
   updateProject(id, projectData) { return this.request('projects.php', { method: 'PUT', body: { id, ...projectData } }); }
   deleteProject(projectId) { return this.request('projects.php', { method: 'DELETE', body: { id: projectId } }); }

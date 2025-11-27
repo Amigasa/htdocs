@@ -35,6 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 // POST - создание нового проекта
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $data = json_decode(file_get_contents("php://input"));
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || $authUser['role'] !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     
     if (empty($data->name)) {
         sendResponse(['success' => false, 'message' => 'Название проекта обязательно'], 400);
@@ -82,6 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // PUT - обновление проекта
 if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
     $data = json_decode(file_get_contents("php://input"));
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || $authUser['role'] !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     
     if (empty($data->id) || empty($data->name)) {
         sendResponse(['success' => false, 'message' => 'ID и название проекта обязательны'], 400);
@@ -120,6 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
 // DELETE - удаление проекта
 if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
     $data = json_decode(file_get_contents("php://input"));
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || $authUser['role'] !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     
     if (empty($data->id)) {
         sendResponse(['success' => false, 'message' => 'ID проекта обязателен'], 400);

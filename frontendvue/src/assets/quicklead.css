@@ -512,7 +512,7 @@ body {
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .btn-icon { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
 .btn-icon:hover { background: var(--gray-100); }
-.client-layout { min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.client-layout { min-height: 100vh; background: var(--gray-50); }
 .client-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 16px 0; box-shadow: var(--shadow); }
 .client-nav { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
 .client-logo { font-size: 20px; font-weight: 700; color: var(--primary); }

@@ -21,4 +21,17 @@ function validateApiKey($api_key) {
     
     return $stmt->rowCount() > 0;
 }
+
+function getAuthenticatedUser() {
+    // Read basic user info passed by frontend in headers (demo auth).
+    // In production this should be replaced with proper JWT/session.
+    $user = null;
+    $id = isset($_SERVER['HTTP_X_USER_ID']) ? intval($_SERVER['HTTP_X_USER_ID']) : null;
+    $role = isset($_SERVER['HTTP_X_USER_ROLE']) ? $_SERVER['HTTP_X_USER_ROLE'] : null;
+    $username = isset($_SERVER['HTTP_X_USER_NAME']) ? $_SERVER['HTTP_X_USER_NAME'] : null;
+    if ($id || $role || $username) {
+        $user = ['id' => $id, 'role' => $role, 'username' => $username];
+    }
+    return $user;
+}
 ?>

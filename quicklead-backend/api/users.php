@@ -30,6 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
 // POST - создание пользователя
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || $authUser['role'] !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     $data = json_decode(file_get_contents("php://input"));
     
     if (empty($data->username) || empty($data->password) || empty($data->name) || empty($data->email)) {
@@ -91,6 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 // PUT - обновление пользователя
 if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || $authUser['role'] !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     $data = json_decode(file_get_contents("php://input"));
     
     if (empty($data->id) || empty($data->name) || empty($data->email) || empty($data->role)) {
@@ -140,6 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
 
 // DELETE - удаление пользователя
 if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+    $authUser = getAuthenticatedUser();
+    if (!$authUser || $authUser['role'] !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Недостаточно прав'], 403);
+    }
     $data = json_decode(file_get_contents("php://input"));
     
     if (empty($data->id)) {
