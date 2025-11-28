@@ -70,19 +70,16 @@ export default {
       // Ensure leads are loaded
       if (!leads.value || leads.value.length === 0) { load(); }
       // Compute statistics from leads
-      const total = leads.value.length;
-      const byStatus = {};
-      const byProject = {};
-      leads.value.forEach(l => {
-        const s = l.status || 'unknown';
-        byStatus[s] = (byStatus[s] || 0) + 1;
-        const p = l.project_name || '—';
-        byProject[p] = (byProject[p] || 0) + 1;
-      });
-      statsData.value = { total, byStatus, byProject };
+      // Try to fetch server-side aggregated stats
+      const user = JSON.parse(localStorage.getItem('qlm_user') || 'null');
+      const st = await api.getLeadsStats(user?.id, user?.role).catch(() => ({ stats: { total: leads.value.length, byStatus: {}, byProject: {} } }));
+      const s = st.stats || { total: leads.value.length, byStatus: {}, byProject: {} };
+      console.debug('Leads showStatistics: server stats response', s);
+      statsData.value = { total: s.total || leads.value.length, byStatus: s.byStatus || {}, byProject: s.byProject || {} };
       statsVisible.value = true;
-      // wait for DOM to render and then update charts
+      // wait for DOM to render and then update charts + layout paint
       await nextTick();
+      await new Promise(resolve => requestAnimationFrame(resolve));
       updateCharts();
     }
 
@@ -99,6 +96,21 @@ export default {
         statusValues.splice(0, statusValues.length, 1);
       }
 
+      // ensure canvas pixel size (DPR) for crisp rendering
+      const sCanvas = statusChartCanvas.value;
+      if (sCanvas) {
+        const rect = sCanvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        sCanvas.width = Math.floor(rect.width * dpr);
+        sCanvas.height = Math.floor((rect.height || 180) * dpr);
+        const ctxCheck = sCanvas.getContext('2d');
+        if (ctxCheck) {
+          ctxCheck.setTransform(dpr, 0, 0, dpr, 0, 0);
+        } else {
+          console.debug('Leads updateCharts - status canvas ctx is null');
+        }
+        console.debug('Leads status canvas size', sCanvas.width, sCanvas.height, 'client', rect.width, rect.height);
+      }
       // create/update status doughnut
       if (statusChart) {
         statusChart.data.labels = statusLabels;
@@ -109,7 +121,7 @@ export default {
         statusChart = new Chart(ctx, {
           type: 'doughnut',
           data: { labels: statusLabels, datasets: [{ data: statusValues, backgroundColor: ['#F59E0B', '#2563EB', '#10B981', '#6B7280'] }] },
-          options: { responsive: true, maintainAspectRatio: false }
+          options: { responsive: false, maintainAspectRatio: false }
         });
       }
 
@@ -119,6 +131,21 @@ export default {
       if (projectEntries.length === 0) projectEntries.push(['Нет данных', 0]);
       const projectLabels = projectEntries.map(e => e[0]);
       const projectData = projectEntries.map(e => e[1]);
+      const pCanvas = projectChartCanvas.value;
+      if (pCanvas) {
+        const rect2 = pCanvas.getBoundingClientRect();
+        const dpr2 = window.devicePixelRatio || 1;
+        pCanvas.width = Math.floor(rect2.width * dpr2);
+        pCanvas.height = Math.floor((rect2.height || 180) * dpr2);
+        const ctxCheck2 = pCanvas.getContext('2d');
+        if (ctxCheck2) {
+          ctxCheck2.setTransform(dpr2, 0, 0, dpr2, 0, 0);
+        } else {
+          console.debug('Leads updateCharts - project canvas ctx is null');
+        }
+        console.debug('Leads project canvas size', pCanvas.width, pCanvas.height, 'client', rect2.width, rect2.height);
+      }
+
       if (projectChart) {
         projectChart.data.labels = projectLabels;
         projectChart.data.datasets[0].data = projectData;
@@ -128,7 +155,7 @@ export default {
         projectChart = new Chart(ctx2, {
           type: 'bar',
           data: { labels: projectLabels, datasets: [{ label: 'Заявки', data: projectData, backgroundColor: projectData.map((_, i) => `hsl(${(i*50)%360} 70% 50%)`) }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+          options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
       }
     }

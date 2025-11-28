@@ -50,6 +50,11 @@ export default class ApiService {
     const blob = await resp.blob();
     return blob;
   }
+  async getLeadsStats(userId = null, userRole = null) {
+    let url = 'leads.php?stats=1';
+    if (userId && userRole) url += `&user_id=${userId}&user_role=${encodeURIComponent(userRole)}`;
+    return this.request(url);
+  }
   createProject(projectData) { return this.request('projects.php', { method: 'POST', body: projectData }); }
   updateProject(id, projectData) { return this.request('projects.php', { method: 'PUT', body: { id, ...projectData } }); }
   deleteProject(projectId) { return this.request('projects.php', { method: 'DELETE', body: { id: projectId } }); }

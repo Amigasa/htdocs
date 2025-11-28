@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
     $user_role = isset($_GET['user_role']) ? $_GET['user_role'] : null;
     $export = isset($_GET['export']) ? $_GET['export'] : null;
+    $statsMode = isset($_GET['stats']) ? true : false;
 
     $query = "SELECT l.*, p.name as project_name 
               FROM leads l 
@@ -53,6 +54,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $leads = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $leads[] = $row;
+    }
+
+    // If stats mode requested return aggregates computed by DB
+    if ($statsMode) {
+        try {
+            // Use same base WHERE conditions as used for leads list
+            $baseWhere = [];
+            $params = [];
+            if ($lead_id) { $baseWhere[] = "l.id = :lead_id"; $params['lead_id'] = $lead_id; }
+            if ($user_id && $user_role === 'client') { $baseWhere[] = "l.user_id = :user_id"; $params['user_id'] = $user_id; }
+            if ($user_id && $user_role === 'operator') {
+                $projStmt = $db->prepare("SELECT project_id FROM users WHERE id = :id LIMIT 1");
+                $projStmt->bindParam(':id', $user_id);
+                $projStmt->execute();
+                $projRow = $projStmt->fetch(PDO::FETCH_ASSOC);
+                if ($projRow && !empty($projRow['project_id'])) {
+                    $operatorProject = intval($projRow['project_id']);
+                    $baseWhere[] = 'l.project_id = :operator_project_id';
+                    $params['operator_project_id'] = $operatorProject;
+                }
+            }
+            $whereSql = count($baseWhere) > 0 ? 'WHERE ' . implode(' AND ', $baseWhere) : '';
+
+            // by status
+            $statusSql = "SELECT l.status, COUNT(*) AS cnt FROM leads l $whereSql GROUP BY l.status";
+            $statusStmt = $db->prepare($statusSql);
+            foreach ($params as $k=>$v) {
+                $statusStmt->bindValue(':' . $k, $v);
+            }
+            $statusStmt->execute();
+            $byStatus = [];
+            $total = 0;
+            while ($r = $statusStmt->fetch(PDO::FETCH_ASSOC)) { $byStatus[$r['status']] = intval($r['cnt']); $total += intval($r['cnt']); }
+
+            // by project
+            $projectSql = "SELECT COALESCE(p.name, 'Без проекта') AS project_name, COUNT(*) AS cnt FROM leads l LEFT JOIN projects p ON l.project_id = p.id $whereSql GROUP BY l.project_id ORDER BY cnt DESC";
+            $projectStmt = $db->prepare($projectSql);
+            foreach ($params as $k=>$v) { $projectStmt->bindValue(':' . $k, $v); }
+            $projectStmt->execute();
+            $byProject = [];
+            while ($r = $projectStmt->fetch(PDO::FETCH_ASSOC)) { $byProject[$r['project_name']] = intval($r['cnt']); }
+
+            // Log stats counts for debugging
+            error_log("leads.php stats: total={$total}, byStatus=" . json_encode($byStatus) . ", byProject=" . json_encode($byProject));
+            sendResponse(['success' => true, 'stats' => ['total' => $total, 'byStatus' => $byStatus, 'byProject' => $byProject]]);
+        } catch (PDOException $e) {
+            sendResponse(['success' => false, 'message' => 'DB error: ' . $e->getMessage()], 500);
+        }
     }
 
     // If export=csv requested, return CSV file
