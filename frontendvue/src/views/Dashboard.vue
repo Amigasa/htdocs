@@ -155,7 +155,7 @@ export default {
     function getStatusColor(status) { if (status === 'new') return 'warning'; if (status === 'in_progress') return 'primary'; if (status === 'success') return 'success'; return 'primary'; }
     function getStatusText(status) { if (status === 'new') return 'Новая'; if (status === 'in_progress') return 'В работе'; if (status === 'success') return 'Успешно'; return status; }
 
-    return { leads, stats, getStatusColor, getStatusText, isOperator };
+    return { leads, stats, getStatusColor, getStatusText, isOperator, projects, userProject };
   }
 };
 </script>

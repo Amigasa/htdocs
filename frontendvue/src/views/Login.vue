@@ -73,8 +73,11 @@ export default {
   setup() {
     const api = new ApiService();
     const router = useRouter();
+    // Add page gradient class to body when component mounts
+    if (typeof document !== 'undefined') document.body.classList.add('page-gradient');
     return { api, router };
   },
+  beforeUnmount() { if (typeof document !== 'undefined') document.body.classList.remove('page-gradient'); },
   data() {
     return {
       page: 'login',

@@ -8,6 +8,7 @@ import Leads from '../views/Leads.vue';
 import AdminLeadDetail from '../views/AdminLeadDetail.vue';
 import ClientLayout from '../views/ClientLayout.vue';
 import ClientRequest from '../views/ClientRequest.vue';
+import ClientRequestDetail from '../views/ClientRequestDetail.vue';
 import ClientRequests from '../views/ClientRequests.vue';
 
 const routes = [
@@ -22,7 +23,8 @@ const routes = [
   ]},
   { path: '/client', name: 'client', component: ClientLayout, children: [
     { path: '', name: 'client-request', component: ClientRequest },
-    { path: 'requests', name: 'client-requests', component: ClientRequests }
+    { path: 'requests', name: 'client-requests', component: ClientRequests },
+    { path: 'requests/:id', name: 'client-request-detail', component: ClientRequestDetail, props: true }
   ]},
   { path: '/:catchAll(.*)', redirect: '/login' }
 ];

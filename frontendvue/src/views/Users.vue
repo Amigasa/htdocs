@@ -53,7 +53,7 @@ export default {
     }
     async function deleteUser(id, name) { if (!confirm(`Удалить пользователя ${name}?`)) return; const res = await api.deleteUser(id).catch(err => { alert('Ошибка: ' + err.message); return null; }); if (res && res.success) { alert('Удален'); load(); } }
 
-    return { users, createUser, editUser, deleteUser };
+    return { users, projects, createUser, editUser, deleteUser };
   }
 };
 </script>
