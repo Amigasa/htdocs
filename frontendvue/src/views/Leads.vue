@@ -91,6 +91,14 @@ export default {
       const statusLabels = Object.keys(byStatus);
       const statusValues = statusLabels.map(k => byStatus[k] || 0);
 
+      console.debug('Leads updateCharts - byStatus:', byStatus);
+      console.debug('Leads updateCharts - byProject:', statsData.value.byProject);
+
+      if (statusLabels.length === 0 || statusValues.every(v => v === 0)) {
+        statusLabels.splice(0, statusLabels.length, 'Нет данных');
+        statusValues.splice(0, statusValues.length, 1);
+      }
+
       // create/update status doughnut
       if (statusChart) {
         statusChart.data.labels = statusLabels;
@@ -108,6 +116,7 @@ export default {
       // projects
       const byProject = statsData.value.byProject || {};
       const projectEntries = Object.entries(byProject).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      if (projectEntries.length === 0) projectEntries.push(['Нет данных', 0]);
       const projectLabels = projectEntries.map(e => e[0]);
       const projectData = projectEntries.map(e => e[1]);
       if (projectChart) {

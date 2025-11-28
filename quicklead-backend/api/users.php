@@ -14,15 +14,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-// GET - получение всех пользователей
+// GET - получение всех пользователей (Only admin may get full list)
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    $query = "SELECT id, username, name, email, role, created_at, is_active, project_id FROM users ORDER BY created_at DESC";
-    $stmt = $db->prepare($query);
-    $stmt->execute();
-    
-    $users = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $users[] = $row;
+    $requester_role = isset($_GET['user_role']) ? $_GET['user_role'] : null;
+    error_log("GET /users called by role: " . ($requester_role ?? 'null'));
+    if ($requester_role !== 'admin') {
+        sendResponse(['success' => false, 'message' => 'Forbidden: insufficient privileges'], 403);
+    }
+    // Detect if the users table has project_id column (migration may not be applied yet)
+    $hasProjectCol = false;
+    try {
+        $colStmt = $db->prepare("SHOW COLUMNS FROM users LIKE 'project_id'");
+        $colStmt->execute();
+        if ($colStmt->rowCount() > 0) $hasProjectCol = true;
+    } catch (Exception $e) {
+        // Log and continue
+        error_log("users.php: error checking project_id column: " . $e->getMessage());
+    }
+
+    try {
+        $users = [];
+        if ($hasProjectCol) {
+            // Use users.project_id if present, otherwise use the most recent lead.project_id for that user
+            $query = "SELECT u.id, u.username, u.name, u.email, u.role, u.created_at, u.is_active, u.project_id,
+                COALESCE(u.project_id, (SELECT l.project_id FROM leads l WHERE l.user_id = u.id ORDER BY l.updated_at DESC LIMIT 1)) AS effective_project_id,
+                (SELECT p.name FROM projects p WHERE p.id = COALESCE(u.project_id, (SELECT l2.project_id FROM leads l2 WHERE l2.user_id = u.id ORDER BY l2.updated_at DESC LIMIT 1))) AS project_name
+                FROM users u ORDER BY u.created_at DESC";
+        } else {
+            // old schema - use the most recent lead.project_id to determine current project
+            $query = "SELECT u.id, u.username, u.name, u.email, u.role, u.created_at, u.is_active,
+                (SELECT p.name FROM projects p JOIN leads l ON l.project_id = p.id WHERE l.user_id = u.id ORDER BY l.updated_at DESC LIMIT 1) AS project_name
+                FROM users u ORDER BY u.created_at DESC";
+        }
+        $stmt = $db->prepare($query);
+        $stmt->execute();
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if (!isset($row['project_id'])) $row['project_id'] = NULL;
+            if (!isset($row['project_name'])) $row['project_name'] = NULL;
+            $users[] = $row;
+        }
+    } catch (PDOException $e) {
+        error_log("users.php: exception fetching users: " . $e->getMessage());
+        sendResponse(['success' => false, 'message' => 'DB error while fetching users'], 500);
     }
     
     sendResponse(['success' => true, 'users' => $users]);
@@ -51,33 +84,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $hashed_password = password_hash($data->password, PASSWORD_DEFAULT);
         $role = !empty($data->role) ? $data->role : 'client';
         $project_id = !empty($data->project_id) ? $data->project_id : NULL;
-        
-        $query = "INSERT INTO users SET 
-            username = :username,
-            password = :password,
-            name = :name,
-            email = :email,
-            role = :role,
-            project_id = :project_id,
-            is_active = TRUE";
-        
+
+        // Detect project_id column once
+        $hasProjectCol = false;
+        try {
+            $colStmt = $db->prepare("SHOW COLUMNS FROM users LIKE 'project_id'");
+            $colStmt->execute();
+            if ($colStmt->rowCount() > 0) $hasProjectCol = true;
+        } catch (Exception $e) {
+            error_log("users.php (POST): error checking project_id column: " . $e->getMessage());
+        }
+
+        if ($hasProjectCol) {
+            $query = "INSERT INTO users SET 
+                username = :username,
+                password = :password,
+                name = :name,
+                email = :email,
+                role = :role,
+                project_id = :project_id,
+                is_active = TRUE";
+        } else {
+            $query = "INSERT INTO users SET 
+                username = :username,
+                password = :password,
+                name = :name,
+                email = :email,
+                role = :role,
+                is_active = TRUE";
+        }
+
         $stmt = $db->prepare($query);
         $stmt->bindParam(":username", $data->username);
         $stmt->bindParam(":password", $hashed_password);
         $stmt->bindParam(":name", $data->name);
         $stmt->bindParam(":email", $data->email);
         $stmt->bindParam(":role", $role);
-        $stmt->bindParam(":project_id", $project_id);
+        if ($hasProjectCol) {
+            $stmt->bindParam(":project_id", $project_id);
+        }
         
         if ($stmt->execute()) {
             $newUserId = $db->lastInsertId();
             
             // Получаем созданного пользователя (без пароля)
-            $getQuery = "SELECT id, username, name, email, role, created_at, project_id FROM users WHERE id = :id";
+            if ($hasProjectCol) {
+                $getQuery = "SELECT u.id, u.username, u.name, u.email, u.role, u.created_at, u.project_id,
+                    COALESCE(u.project_id, (SELECT l.project_id FROM leads l WHERE l.user_id = u.id ORDER BY l.updated_at DESC LIMIT 1)) AS effective_project_id,
+                    (SELECT p.name FROM projects p WHERE p.id = COALESCE(u.project_id, (SELECT l2.project_id FROM leads l2 WHERE l2.user_id = u.id ORDER BY l2.updated_at DESC LIMIT 1))) AS project_name
+                    FROM users u WHERE u.id = :id";
+            } else {
+                $getQuery = "SELECT u.id, u.username, u.name, u.email, u.role, u.created_at,
+                    (SELECT p.name FROM projects p JOIN leads l ON l.project_id = p.id WHERE l.user_id = u.id ORDER BY l.updated_at DESC LIMIT 1) AS project_name
+                    FROM users u WHERE u.id = :id";
+            }
             $getStmt = $db->prepare($getQuery);
             $getStmt->bindParam(":id", $newUserId);
             $getStmt->execute();
             $newUser = $getStmt->fetch(PDO::FETCH_ASSOC);
+            if (!isset($newUser['project_id'])) $newUser['project_id'] = NULL;
+            if (!isset($newUser['project_name'])) $newUser['project_name'] = NULL;
             
             sendResponse([
                 'success' => true,
@@ -112,26 +178,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
             sendResponse(['success' => false, 'message' => 'Пользователь с таким email уже существует'], 400);
         }
         
-        $query = "UPDATE users SET 
-            name = :name,
-            email = :email,
-            role = :role
-            , project_id = :project_id
-            WHERE id = :id";
-        
+        // Detect project_id column
+        $hasProjectCol = false;
+        try {
+            $colStmt = $db->prepare("SHOW COLUMNS FROM users LIKE 'project_id'");
+            $colStmt->execute();
+            if ($colStmt->rowCount() > 0) $hasProjectCol = true;
+        } catch (Exception $e) {
+            error_log("users.php (PUT): error checking project_id column: " . $e->getMessage());
+        }
+
+        if ($hasProjectCol) {
+            $query = "UPDATE users SET 
+                name = :name,
+                email = :email,
+                role = :role,
+                project_id = :project_id
+                WHERE id = :id";
+        } else {
+            $query = "UPDATE users SET 
+                name = :name,
+                email = :email,
+                role = :role
+                WHERE id = :id";
+        }
+
         $stmt = $db->prepare($query);
         $stmt->bindParam(":name", $data->name);
         $stmt->bindParam(":email", $data->email);
-        $project_id = !empty($data->project_id) ? $data->project_id : NULL;
         $stmt->bindParam(":role", $data->role);
-        $stmt->bindParam(":project_id", $project_id);
+        if ($hasProjectCol) {
+            $project_id = !empty($data->project_id) ? $data->project_id : NULL;
+            $stmt->bindParam(":project_id", $project_id);
+        }
         $stmt->bindParam(":id", $data->id);
         
         if ($stmt->execute()) {
             if ($stmt->rowCount() > 0) {
+                // Re-fetch user to include project_name
+                if ($hasProjectCol) {
+                    $getQuery = "SELECT u.id, u.username, u.name, u.email, u.role, u.created_at, u.project_id,
+                        COALESCE(u.project_id, (SELECT l.project_id FROM leads l WHERE l.user_id = u.id ORDER BY l.updated_at DESC LIMIT 1)) AS effective_project_id,
+                        (SELECT p.name FROM projects p WHERE p.id = COALESCE(u.project_id, (SELECT l2.project_id FROM leads l2 WHERE l2.user_id = u.id ORDER BY l2.updated_at DESC LIMIT 1))) AS project_name
+                        FROM users u WHERE u.id = :id";
+                } else {
+                    $getQuery = "SELECT u.id, u.username, u.name, u.email, u.role, u.created_at,
+                        (SELECT p.name FROM projects p JOIN leads l ON l.project_id = p.id WHERE l.user_id = u.id ORDER BY l.updated_at DESC LIMIT 1) AS project_name
+                        FROM users u WHERE u.id = :id";
+                }
+                $getStmt = $db->prepare($getQuery);
+                $getStmt->bindParam(":id", $data->id);
+                $getStmt->execute();
+                $updatedUser = $getStmt->fetch(PDO::FETCH_ASSOC);
+                if (!isset($updatedUser['project_name'])) $updatedUser['project_name'] = NULL;
                 sendResponse([
                     'success' => true,
-                    'message' => 'Пользователь обновлен успешно'
+                    'message' => 'Пользователь обновлен успешно',
+                    'user' => $updatedUser
                 ]);
             } else {
                 sendResponse(['success' => false, 'message' => 'Пользователь не найден'], 404);

@@ -3,6 +3,7 @@
     <div class="page-header">
       <button class="btn btn-primary" @click="createUser">👤 Добавить пользователя</button>
     </div>
+    <div v-if="usersError" class="card" style="margin-bottom: 12px; color: #B91C1C;">{{ usersError }}</div>
     <table class="table">
       <thead><tr><th>ID</th><th>Имя</th><th>Email</th><th>Роль</th><th>Проект</th><th>Дата</th><th>Действия</th></tr></thead>
       <tbody>
@@ -11,7 +12,7 @@
           <td>{{ u.name }}</td>
           <td>{{ u.email }}</td>
           <td><span class="badge" :class="u.role === 'admin' ? 'badge-danger' : 'badge-primary'">{{ u.role }}</span></td>
-          <td>{{ u.project_id ? (projects.find(p => p.id === u.project_id)?.name || u.project_id) : '-' }}</td>
+          <td>{{ u.project_name || (u.project_id ? (projects.find(p => p.id === u.project_id)?.name || u.project_id) : '-') }}</td>
           <td>{{ new Date(u.created_at).toLocaleDateString() }}</td>
           <td><button class="btn-icon" @click="editUser(u.id)">✏️</button> <button class="btn-icon" style="color:#EF4444" @click="deleteUser(u.id, u.name)">🗑️</button></td>
         </tr>
@@ -28,8 +29,21 @@ export default {
   name: 'Users',
   setup() {
     const users = ref([]);
+    const usersError = ref('');
     const projects = ref([]);
-    async function load() { const res = await api.getUsers().catch(() => ({ users: [] })); users.value = res.users || []; }
+    async function load() {
+      usersError.value = '';
+      try {
+        const user = JSON.parse(localStorage.getItem('qlm_user') || 'null');
+        const res = await api.getUsers(user?.role);
+        users.value = res.users || [];
+        console.log('Loaded users:', users.value);
+      } catch (err) {
+        console.error('Error loading users:', err);
+        users.value = [];
+        usersError.value = err.message || 'Ошибка при загрузке списка пользователей';
+      }
+    }
     async function loadProjects() { const res = await api.getProjects().catch(() => ({ projects: [] })); projects.value = res.projects || []; }
     onMounted(() => { load(); loadProjects(); });
     async function createUser() { const name = prompt('Введите имя'); const email = prompt('Email'); const role = prompt('Роль (admin, operator, client)', 'client'); const password = prompt('Пароль (мин 6)'); if (!name || !email || !password) { alert('Заполните поля'); return; } let project_id = null; if (role === 'operator') { const choices = projects.value.map(p => `${p.id}: ${p.name}`).join('\n'); const pid = prompt('ID проекта для оператора (оставьте пустым если не нужно):\n' + choices); if (pid) project_id = parseInt(pid); } const res = await api.createUser({ username: email.split('@')[0], name, email, role, password, project_id }).catch(err => { alert('Ошибка: ' + err.message); return null; }); if (res && res.success) { alert('Создан'); load(); } }
@@ -53,7 +67,7 @@ export default {
     }
     async function deleteUser(id, name) { if (!confirm(`Удалить пользователя ${name}?`)) return; const res = await api.deleteUser(id).catch(err => { alert('Ошибка: ' + err.message); return null; }); if (res && res.success) { alert('Удален'); load(); } }
 
-    return { users, projects, createUser, editUser, deleteUser };
+    return { users, usersError, projects, createUser, editUser, deleteUser };
   }
 };
 </script>

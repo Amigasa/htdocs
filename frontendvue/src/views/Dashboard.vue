@@ -116,8 +116,18 @@ export default {
       stats.value.inProgress = byStatus.in_progress || 0;
       stats.value.success = byStatus.success || 0;
 
-      const statusLabels = Object.keys(byStatus);
+      // Debug logging for diagnosing empty charts
+      console.debug('Dashboard updateCharts - byStatus:', byStatus);
+      console.debug('Dashboard updateCharts - byProject:', byProject);
+
+      const statusLabels = Object.keys(byStatus).filter(k => byStatus[k] !== undefined);
       const statusData = statusLabels.map(k => byStatus[k]);
+
+      // If no data present, provide a fallback label to prevent Chart from rendering blank
+      if (statusLabels.length === 0 || statusData.every(v => v === 0)) {
+        statusLabels.splice(0, statusLabels.length, 'Нет данных');
+        statusData.splice(0, statusData.length, 1);
+      }
 
       if (statusChart) {
         statusChart.data.labels = statusLabels;
@@ -135,6 +145,9 @@ export default {
       }
 
       const projectEntries = Object.entries(byProject).sort((a,b) => b[1] - a[1]).slice(0,8);
+      if (projectEntries.length === 0) {
+        projectEntries.push(['Нет данных', 0]);
+      }
       const projectLabels = projectEntries.map(e => e[0]);
       const projectData = projectEntries.map(e => e[1]);
       if (projectChart) {

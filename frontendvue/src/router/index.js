@@ -51,6 +51,10 @@ router.beforeEach((to, from, next) => {
     if (user.role === 'admin' || user.role === 'operator') return next('/admin');
     return next('/login');
   }
+  // Restrict /admin/users to admin only
+  if (to.path.startsWith('/admin/users') && user.role !== 'admin') {
+    return next('/admin');
+  }
   // Default: if user is admin/operator -> admin, else client
   if (user.role === 'admin' || user.role === 'operator') return next('/admin');
   return next('/client');

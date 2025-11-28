@@ -28,7 +28,7 @@ export default class ApiService {
   register(userData) { return this.request('register.php', { method: 'POST', body: userData }); }
   getLeads(userId = null, userRole = null) {
     let url = 'leads.php';
-    if (userRole === 'client' && userId) url += `?user_id=${userId}&user_role=${userRole}`;
+    if (userId && userRole) url += `?user_id=${userId}&user_role=${encodeURIComponent(userRole)}`;
     return this.request(url);
   }
   // Fetch a single lead by id: leads.php?lead_id=123 expected
@@ -38,7 +38,7 @@ export default class ApiService {
   }
   incrementLeadViews(leadId) { return this.request('leads.php', { method: 'PUT', body: { id: leadId, increment_views: true } }); }
   getProjects() { return this.request('projects.php'); }
-  getUsers() { return this.request('users.php'); }
+  getUsers(userRole = null) { return this.request(userRole ? `users.php?user_role=${encodeURIComponent(userRole)}` : 'users.php'); }
   createLead(leadData) { return this.request('leads.php', { method: 'POST', body: leadData }); }
   updateLeadStatus(leadId, status) { return this.request('leads.php', { method: 'PUT', body: { id: leadId, status } }); }
   // server-side export: returns Blob
