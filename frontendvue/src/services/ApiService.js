@@ -31,10 +31,25 @@ export default class ApiService {
     if (userRole === 'client' && userId) url += `?user_id=${userId}&user_role=${userRole}`;
     return this.request(url);
   }
+  // Fetch a single lead by id: leads.php?lead_id=123 expected
+  getLead(leadId) {
+    let url = `leads.php?lead_id=${leadId}`;
+    return this.request(url);
+  }
+  incrementLeadViews(leadId) { return this.request('leads.php', { method: 'PUT', body: { id: leadId, increment_views: true } }); }
   getProjects() { return this.request('projects.php'); }
   getUsers() { return this.request('users.php'); }
   createLead(leadData) { return this.request('leads.php', { method: 'POST', body: leadData }); }
   updateLeadStatus(leadId, status) { return this.request('leads.php', { method: 'PUT', body: { id: leadId, status } }); }
+  // server-side export: returns Blob
+  async exportLeadsBackend(userId = null, userRole = null) {
+    let url = `${this.baseUrl}/leads.php?export=csv`;
+    if (userId && userRole) url += `&user_id=${userId}&user_role=${userRole}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Export failed: HTTP ' + resp.status);
+    const blob = await resp.blob();
+    return blob;
+  }
   createProject(projectData) { return this.request('projects.php', { method: 'POST', body: projectData }); }
   updateProject(id, projectData) { return this.request('projects.php', { method: 'PUT', body: { id, ...projectData } }); }
   deleteProject(projectId) { return this.request('projects.php', { method: 'DELETE', body: { id: projectId } }); }

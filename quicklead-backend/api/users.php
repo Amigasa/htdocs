@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // GET - получение всех пользователей
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    $query = "SELECT id, username, name, email, role, created_at, is_active FROM users ORDER BY created_at DESC";
+    $query = "SELECT id, username, name, email, role, created_at, is_active, project_id FROM users ORDER BY created_at DESC";
     $stmt = $db->prepare($query);
     $stmt->execute();
     
@@ -50,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $hashed_password = password_hash($data->password, PASSWORD_DEFAULT);
         $role = !empty($data->role) ? $data->role : 'client';
+        $project_id = !empty($data->project_id) ? $data->project_id : NULL;
         
         $query = "INSERT INTO users SET 
             username = :username,
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             name = :name,
             email = :email,
             role = :role,
+            project_id = :project_id,
             is_active = TRUE";
         
         $stmt = $db->prepare($query);
@@ -65,12 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bindParam(":name", $data->name);
         $stmt->bindParam(":email", $data->email);
         $stmt->bindParam(":role", $role);
+        $stmt->bindParam(":project_id", $project_id);
         
         if ($stmt->execute()) {
             $newUserId = $db->lastInsertId();
             
             // Получаем созданного пользователя (без пароля)
-            $getQuery = "SELECT id, username, name, email, role, created_at FROM users WHERE id = :id";
+            $getQuery = "SELECT id, username, name, email, role, created_at, project_id FROM users WHERE id = :id";
             $getStmt = $db->prepare($getQuery);
             $getStmt->bindParam(":id", $newUserId);
             $getStmt->execute();
@@ -113,12 +116,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
             name = :name,
             email = :email,
             role = :role
+            , project_id = :project_id
             WHERE id = :id";
         
         $stmt = $db->prepare($query);
         $stmt->bindParam(":name", $data->name);
         $stmt->bindParam(":email", $data->email);
+        $project_id = !empty($data->project_id) ? $data->project_id : NULL;
         $stmt->bindParam(":role", $data->role);
+        $stmt->bindParam(":project_id", $project_id);
         $stmt->bindParam(":id", $data->id);
         
         if ($stmt->execute()) {

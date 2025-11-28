@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $database = new Database();
         $db = $database->getConnection();
         
-        $query = "SELECT id, username, password, name, email, role FROM users WHERE username = :username";
+        $query = "SELECT id, username, password, name, email, role, project_id FROM users WHERE username = :username";
         $stmt = $db->prepare($query);
         $stmt->bindParam(":username", $data->username);
         $stmt->execute();
@@ -26,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'email' => $row['email'],
                     'role' => $row['role']
                 ];
+                // include project_id if present
+                if (isset($row['project_id'])) $user_data['project_id'] = $row['project_id'];
                 
                 sendResponse([
                     'success' => true,

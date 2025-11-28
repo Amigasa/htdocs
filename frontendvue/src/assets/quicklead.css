@@ -337,7 +337,7 @@ body {
 .logout-btn:hover { background: var(--danger); color: white; }
 .admin-main { flex: 1; display: flex; flex-direction: column; }
 .admin-header { background: white; padding: 20px 30px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
-.admin-content { flex: 1; padding: 30px; background: var(--gray-50); }
+.admin-content { flex: 1; padding: 30px; background: transparent; }
 
 /* Stats and dashboard */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }

@@ -91,7 +91,15 @@ export default {
     async onLogin() {
       try {
         // Try API login; fallback to demo authentication
-        const result = await this.api.login(this.username, this.password).catch(() => ({ success: true, user: { username: this.username, name: this.username, role: 'client' } }));
+        const result = await this.api.login(this.username, this.password).catch(() => {
+          // Fallback demo login when backend is not available; map username to role
+          const roleMap = { admin: 'admin', operator: 'operator', client: 'client', testuser: 'client' };
+          const role = roleMap[this.username] || 'client';
+          const projectMap = { operator: 1 }; // demo mapping: operator belongs to project 1
+          const user = { username: this.username, name: this.username, role };
+          if (projectMap[role]) user.project_id = projectMap[role];
+          return { success: true, user };
+        });
         if (result.success) {
           localStorage.setItem('qlm_user', JSON.stringify(result.user));
           if (result.user.role === 'admin' || result.user.role === 'operator') this.router.push('/admin'); else this.router.push('/client');
@@ -109,7 +117,7 @@ export default {
       } catch (err) { alert('Ошибка: ' + err.message); }
     },
     async demoLogin(role) {
-      const users = { admin: { username: 'admin', role: 'admin', name: 'Admin' }, operator: { username: 'operator', role: 'operator', name: 'Operator' }, client: { username: 'client', role: 'client', name: 'Client' } };
+      const users = { admin: { username: 'admin', role: 'admin', name: 'Admin' }, operator: { username: 'operator', role: 'operator', name: 'Operator', project_id: 1 }, client: { username: 'client', role: 'client', name: 'Client' } };
       localStorage.setItem('qlm_user', JSON.stringify(users[role]));
       if (users[role].role === 'admin' || users[role].role === 'operator') this.router.push('/admin'); else this.router.push('/client');
     }
